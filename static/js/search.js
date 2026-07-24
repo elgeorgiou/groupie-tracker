@@ -12,6 +12,7 @@ const clearButton = document.querySelector('.search__clear');
 
 const artistsDataElement = document.getElementById('artists-data');
 const artistsGrid = document.querySelector('.artists__grid');
+
 const artistCards = Array.from(
     document.querySelectorAll('.artist-card')
 );
@@ -39,7 +40,6 @@ const nextPageButton = document.querySelector(
     '.pagination__button--next'
 );
 
-
 /* ==========================================================
    APPLICATION STATE
 ========================================================== */
@@ -50,6 +50,10 @@ let artists = [];
 let filteredCards = [...artistCards];
 let currentPage = 1;
 let activeSuggestionIndex = -1;
+
+/* ==========================================================
+   ARTIST DATA
+========================================================== */
 
 function readArtistsData() {
     if (!artistsDataElement) {
@@ -78,6 +82,10 @@ function readArtistsData() {
 }
 
 artists = readArtistsData();
+
+/* ==========================================================
+   GENERAL HELPERS
+========================================================== */
 
 function normalizeText(value) {
     return String(value ?? '')
@@ -113,14 +121,27 @@ function getArtistMembers(artist) {
     return Array.isArray(members) ? members : [];
 }
 
+function getArtistLocations(artist) {
+    const locations =
+        artist.locationsList ??
+        artist.Locations ??
+        [];
+
+    return Array.isArray(locations) ? locations : [];
+}
+
 function getArtistCreationDate(artist) {
-    return artist.creationDate ?? artist.creation_date ??
-        artist.CreationDate ?? '';
+    return artist.creationDate ??
+        artist.creation_date ??
+        artist.CreationDate ??
+        '';
 }
 
 function getArtistFirstAlbum(artist) {
-    return artist.firstAlbum ?? artist.first_album ??
-        artist.FirstAlbum ?? '';
+    return artist.firstAlbum ??
+        artist.first_album ??
+        artist.FirstAlbum ??
+        '';
 }
 
 function escapeHTML(value) {
@@ -131,6 +152,10 @@ function escapeHTML(value) {
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;');
 }
+
+/* ==========================================================
+   SEARCH CONTROLS
+========================================================== */
 
 function updateSearchControls() {
     if (!searchInput || !searchButton || !clearButton) {
@@ -165,37 +190,141 @@ function openSuggestions() {
     searchInput.setAttribute('aria-expanded', 'true');
 }
 
-function artistMatchesQuery(artist, query) {
-    const normalizedQuery = normalizeText(query);
+/* ==========================================================
+   SEARCH SUGGESTIONS
+========================================================== */
 
-    if (normalizedQuery === '') {
-        return false;
+function createSearchSuggestion(
+    artist,
+    value,
+    type,
+    description
+) {
+    return {
+        artistID: getArtistID(artist),
+        artistName: getArtistName(artist),
+        artistImage: getArtistImage(artist),
+        value,
+        type,
+        description,
+    };
+}
+
+function getArtistSuggestions(artist, query) {
+    const normalizedQuery = normalizeText(query);
+    const suggestions = [];
+
+    const artistName = getArtistName(artist);
+
+    const creationDate = String(
+        getArtistCreationDate(artist)
+    );
+
+    const firstAlbum = getArtistFirstAlbum(artist);
+    const members = getArtistMembers(artist);
+    const locations = getArtistLocations(artist);
+
+    if (
+        normalizeText(artistName).includes(normalizedQuery)
+    ) {
+        suggestions.push(
+            createSearchSuggestion(
+                artist,
+                artistName,
+                'Artist',
+                `Formed ${creationDate}`
+            )
+        );
     }
 
-    const searchableValues = [
-        getArtistName(artist),
-        getArtistCreationDate(artist),
-        getArtistFirstAlbum(artist),
-        ...getArtistMembers(artist),
-    ];
-
-    return searchableValues.some((value) => {
-        return normalizeText(value).includes(normalizedQuery);
+    members.forEach((member) => {
+        if (
+            normalizeText(member).includes(normalizedQuery)
+        ) {
+            suggestions.push(
+                createSearchSuggestion(
+                    artist,
+                    member,
+                    'Member',
+                    `Member of ${artistName}`
+                )
+            );
+        }
     });
+
+    locations.forEach((location) => {
+        if (
+            normalizeText(location).includes(normalizedQuery)
+        ) {
+            suggestions.push(
+                createSearchSuggestion(
+                    artist,
+                    location,
+                    'Location',
+                    `Concert location for ${artistName}`
+                )
+            );
+        }
+    });
+
+    if (
+        normalizeText(creationDate).includes(normalizedQuery)
+    ) {
+        suggestions.push(
+            createSearchSuggestion(
+                artist,
+                creationDate,
+                'Creation Date',
+                artistName
+            )
+        );
+    }
+
+    if (
+        normalizeText(firstAlbum).includes(normalizedQuery)
+    ) {
+        suggestions.push(
+            createSearchSuggestion(
+                artist,
+                firstAlbum,
+                'First Album',
+                artistName
+            )
+        );
+    }
+
+    return suggestions;
 }
 
-function getMatchingArtists(query) {
-    return artists
-        .filter((artist) => artistMatchesQuery(artist, query))
-        .slice(0, 7);
+function getMatchingSuggestions(query) {
+    const matchingSuggestions = artists.flatMap(
+        (artist) => {
+            return getArtistSuggestions(artist, query);
+        }
+    );
+
+    const uniqueSuggestions = [];
+    const seenSuggestions = new Set();
+
+    matchingSuggestions.forEach((suggestion) => {
+        const suggestionKey = [
+            suggestion.artistID,
+            suggestion.type,
+            normalizeText(suggestion.value),
+        ].join('|');
+
+        if (seenSuggestions.has(suggestionKey)) {
+            return;
+        }
+
+        seenSuggestions.add(suggestionKey);
+        uniqueSuggestions.push(suggestion);
+    });
+
+    return uniqueSuggestions.slice(0, 8);
 }
 
-function createSuggestionMarkup(artist, index) {
-    const artistID = getArtistID(artist);
-    const artistName = getArtistName(artist);
-    const artistImage = getArtistImage(artist);
-    const creationDate = getArtistCreationDate(artist);
-
+function createSuggestionMarkup(suggestion, index) {
     return `
         <li role="presentation">
             <button
@@ -204,22 +333,28 @@ function createSuggestionMarkup(artist, index) {
                 role="option"
                 aria-selected="false"
                 data-suggestion-index="${index}"
-                data-artist-id="${escapeHTML(artistID)}"
+                data-artist-id="${escapeHTML(
+                    suggestion.artistID
+                )}"
             >
                 <img
                     class="search__suggestion-image"
-                    src="${escapeHTML(artistImage)}"
+                    src="${escapeHTML(
+                        suggestion.artistImage
+                    )}"
                     alt=""
                     loading="lazy"
                 >
 
                 <span class="search__suggestion-content">
                     <span class="search__suggestion-name">
-                        ${escapeHTML(artistName)}
+                        ${escapeHTML(suggestion.value)}
                     </span>
 
                     <span class="search__suggestion-type">
-                        Artist · Formed ${escapeHTML(creationDate)}
+                        ${escapeHTML(suggestion.type)}
+                        ·
+                        ${escapeHTML(suggestion.description)}
                     </span>
                 </span>
 
@@ -247,12 +382,13 @@ function renderSuggestions(query) {
         return;
     }
 
-    const matchingArtists = getMatchingArtists(normalizedQuery);
+    const matchingSuggestions =
+        getMatchingSuggestions(normalizedQuery);
 
-    if (matchingArtists.length === 0) {
+    if (matchingSuggestions.length === 0) {
         searchSuggestions.innerHTML = `
             <li class="search__suggestions-empty">
-                No matching artists found
+                No matching results found
             </li>
         `;
 
@@ -261,7 +397,7 @@ function renderSuggestions(query) {
         return;
     }
 
-    searchSuggestions.innerHTML = matchingArtists
+    searchSuggestions.innerHTML = matchingSuggestions
         .map(createSuggestionMarkup)
         .join('');
 
@@ -276,7 +412,9 @@ function getSuggestionButtons() {
     }
 
     return Array.from(
-        searchSuggestions.querySelectorAll('.search__suggestion')
+        searchSuggestions.querySelectorAll(
+            '.search__suggestion'
+        )
     );
 }
 
@@ -324,7 +462,8 @@ function openArtistPage(artistID) {
         return;
     }
 
-    window.location.href = `/artist?id=${encodeURIComponent(artistID)}`;
+    window.location.href =
+        `/artist?id=${encodeURIComponent(artistID)}`;
 }
 
 function selectActiveSuggestion() {
@@ -344,6 +483,10 @@ function selectActiveSuggestion() {
 
     return true;
 }
+
+/* ==========================================================
+   SEARCH EVENTS
+========================================================== */
 
 if (searchInput) {
     searchInput.addEventListener('input', () => {
@@ -398,17 +541,22 @@ if (searchInput) {
 }
 
 if (searchSuggestions) {
-    searchSuggestions.addEventListener('click', (event) => {
-        const suggestionButton = event.target.closest(
-            '.search__suggestion'
-        );
+    searchSuggestions.addEventListener(
+        'click',
+        (event) => {
+            const suggestionButton = event.target.closest(
+                '.search__suggestion'
+            );
 
-        if (!suggestionButton) {
-            return;
+            if (!suggestionButton) {
+                return;
+            }
+
+            openArtistPage(
+                suggestionButton.dataset.artistId
+            );
         }
-
-        openArtistPage(suggestionButton.dataset.artistId);
-    });
+    );
 }
 
 if (clearButton && searchInput) {
@@ -443,9 +591,15 @@ document.addEventListener('click', (event) => {
     closeSuggestions();
 });
 
+/* ==========================================================
+   FILTER OPTIONS
+========================================================== */
+
 function getUniqueSortedValues(values) {
     return [...new Set(values)]
-        .filter((value) => value !== null && value !== '')
+        .filter((value) => {
+            return value !== null && value !== '';
+        })
         .sort((firstValue, secondValue) => {
             return firstValue - secondValue;
         });
@@ -469,13 +623,17 @@ function addOptionsToSelect(selectElement, values) {
 function populateFilterOptions() {
     const creationYears = getUniqueSortedValues(
         artistCards.map((card) => {
-            return parseYear(card.dataset.creationYear);
+            return parseYear(
+                card.dataset.creationYear
+            );
         })
     );
 
     const firstAlbumYears = getUniqueSortedValues(
         artistCards.map((card) => {
-            return parseYear(card.dataset.firstAlbum);
+            return parseYear(
+                card.dataset.firstAlbum
+            );
         })
     );
 
@@ -489,6 +647,10 @@ function populateFilterOptions() {
         firstAlbumYears
     );
 }
+
+/* ==========================================================
+   FILTERING
+========================================================== */
 
 function cardMatchesFilters(card) {
     const selectedCreationYear =
@@ -513,46 +675,74 @@ function cardMatchesFilters(card) {
         selectedFirstAlbumYear === '' ||
         cardFirstAlbumYear === selectedFirstAlbumYear;
 
-    return creationYearMatches && firstAlbumMatches;
+    return (
+        creationYearMatches &&
+        firstAlbumMatches
+    );
 }
+
+/* ==========================================================
+   SORTING
+========================================================== */
 
 function sortCards(cards) {
-    const sortValue = artistSortSelect?.value ?? 'default';
+    const sortValue =
+        artistSortSelect?.value ?? 'default';
 
-    return [...cards].sort((firstCard, secondCard) => {
-        const firstName = normalizeText(
-            firstCard.dataset.artistName
-        );
+    return [...cards].sort(
+        (firstCard, secondCard) => {
+            const firstName = normalizeText(
+                firstCard.dataset.artistName
+            );
 
-        const secondName = normalizeText(
-            secondCard.dataset.artistName
-        );
+            const secondName = normalizeText(
+                secondCard.dataset.artistName
+            );
 
-        const firstYear =
-            parseYear(firstCard.dataset.creationYear) ?? 0;
+            const firstYear =
+                parseYear(
+                    firstCard.dataset.creationYear
+                ) ?? 0;
 
-        const secondYear =
-            parseYear(secondCard.dataset.creationYear) ?? 0;
+            const secondYear =
+                parseYear(
+                    secondCard.dataset.creationYear
+                ) ?? 0;
 
-        switch (sortValue) {
-            case 'name-ascending':
-                return firstName.localeCompare(secondName);
+            switch (sortValue) {
+                case 'name-ascending':
+                    return firstName.localeCompare(
+                        secondName
+                    );
 
-            case 'name-descending':
-                return secondName.localeCompare(firstName);
+                case 'name-descending':
+                    return secondName.localeCompare(
+                        firstName
+                    );
 
-            case 'year-ascending':
-                return firstYear - secondYear;
+                case 'year-ascending':
+                    return firstYear - secondYear;
 
-            case 'year-descending':
-                return secondYear - firstYear;
+                case 'year-descending':
+                    return secondYear - firstYear;
 
-            default:
-                return Number(firstCard.dataset.artistId) -
-                    Number(secondCard.dataset.artistId);
+                default:
+                    return (
+                        Number(
+                            firstCard.dataset.artistId
+                        ) -
+                        Number(
+                            secondCard.dataset.artistId
+                        )
+                    );
+            }
         }
-    });
+    );
 }
+
+/* ==========================================================
+   PAGINATION
+========================================================== */
 
 function getTotalPages() {
     return Math.ceil(
@@ -568,14 +758,21 @@ function createPaginationPageButton(pageNumber) {
     button.className = 'pagination__page';
     button.dataset.page = String(pageNumber);
     button.textContent = String(pageNumber);
+
     button.setAttribute(
         'aria-label',
         `Go to page ${pageNumber}`
     );
 
     if (pageNumber === currentPage) {
-        button.classList.add('pagination__page--active');
-        button.setAttribute('aria-current', 'page');
+        button.classList.add(
+            'pagination__page--active'
+        );
+
+        button.setAttribute(
+            'aria-current',
+            'page'
+        );
     }
 
     listItem.append(button);
@@ -588,7 +785,11 @@ function createPaginationEllipsis() {
 
     listItem.className = 'pagination__ellipsis';
     listItem.textContent = '…';
-    listItem.setAttribute('aria-hidden', 'true');
+
+    listItem.setAttribute(
+        'aria-hidden',
+        'true'
+    );
 
     return listItem;
 }
@@ -656,10 +857,14 @@ function renderPagination() {
 
     pagination.hidden = false;
 
-    previousPageButton.disabled = currentPage === 1;
-    nextPageButton.disabled = currentPage === totalPages;
+    previousPageButton.disabled =
+        currentPage === 1;
 
-    const visiblePages = getVisiblePageNumbers(totalPages);
+    nextPageButton.disabled =
+        currentPage === totalPages;
+
+    const visiblePages =
+        getVisiblePageNumbers(totalPages);
 
     visiblePages.forEach((page) => {
         if (typeof page === 'number') {
@@ -676,6 +881,10 @@ function renderPagination() {
     });
 }
 
+/* ==========================================================
+   ARTIST COLLECTION
+========================================================== */
+
 function updateArtistCount() {
     if (!artistsCountNumber) {
         return;
@@ -691,7 +900,8 @@ function updateEmptyState() {
         return;
     }
 
-    const hasArtists = filteredCards.length > 0;
+    const hasArtists =
+        filteredCards.length > 0;
 
     artistsGrid.hidden = !hasArtists;
     artistsEmptyState.hidden = hasArtists;
@@ -717,7 +927,10 @@ function renderArtistCards() {
         startIndex + artistsPerPage;
 
     const cardsForCurrentPage =
-        filteredCards.slice(startIndex, endIndex);
+        filteredCards.slice(
+            startIndex,
+            endIndex
+        );
 
     cardsForCurrentPage.forEach((card) => {
         card.hidden = false;
@@ -757,6 +970,10 @@ function resetFilters() {
     applyFiltersAndSorting();
 }
 
+/* ==========================================================
+   FILTER AND SORT EVENTS
+========================================================== */
+
 creationYearSelect?.addEventListener(
     'change',
     applyFiltersAndSorting
@@ -782,62 +999,81 @@ emptyResetButton?.addEventListener(
     resetFilters
 );
 
-paginationList?.addEventListener('click', (event) => {
-    const pageButton = event.target.closest(
-        '.pagination__page'
-    );
+/* ==========================================================
+   PAGINATION EVENTS
+========================================================== */
 
-    if (!pageButton) {
-        return;
+paginationList?.addEventListener(
+    'click',
+    (event) => {
+        const pageButton = event.target.closest(
+            '.pagination__page'
+        );
+
+        if (!pageButton) {
+            return;
+        }
+
+        currentPage = Number(
+            pageButton.dataset.page
+        );
+
+        renderArtistCards();
+
+        document
+            .getElementById('artists')
+            ?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
     }
+);
 
-    currentPage = Number(pageButton.dataset.page);
+previousPageButton?.addEventListener(
+    'click',
+    () => {
+        if (currentPage <= 1) {
+            return;
+        }
 
-    renderArtistCards();
+        currentPage -= 1;
 
-    document
-        .getElementById('artists')
-        ?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-        });
-});
+        renderArtistCards();
 
-previousPageButton?.addEventListener('click', () => {
-    if (currentPage <= 1) {
-        return;
+        document
+            .getElementById('artists')
+            ?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
     }
+);
 
-    currentPage -= 1;
+nextPageButton?.addEventListener(
+    'click',
+    () => {
+        const totalPages = getTotalPages();
 
-    renderArtistCards();
+        if (currentPage >= totalPages) {
+            return;
+        }
 
-    document
-        .getElementById('artists')
-        ?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-        });
-});
+        currentPage += 1;
 
-nextPageButton?.addEventListener('click', () => {
-    const totalPages = getTotalPages();
+        renderArtistCards();
 
-    if (currentPage >= totalPages) {
-        return;
+        document
+            .getElementById('artists')
+            ?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
     }
+);
 
-    currentPage += 1;
-
-    renderArtistCards();
-
-    document
-        .getElementById('artists')
-        ?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-        });
-});
+/* ==========================================================
+   INITIALIZATION
+========================================================== */
 
 function initializeSearch() {
     updateSearchControls();
