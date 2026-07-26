@@ -17,20 +17,89 @@ const artistCards = Array.from(
     document.querySelectorAll('.artist-card')
 );
 
-const creationYearSelect = document.getElementById('creation-year');
-const firstAlbumSelect = document.getElementById('first-album');
-const artistSortSelect = document.getElementById('artist-sort');
+const creationYearMinimumInput = document.getElementById(
+    'creation-year-min'
+);
 
-const resetFiltersButton = document.querySelector('.filters__reset');
-const emptyResetButton = document.querySelector('.artists__empty-reset');
-const artistsEmptyState = document.querySelector('.artists__empty');
+const creationYearMaximumInput = document.getElementById(
+    'creation-year-max'
+);
+
+const creationYearOutput = document.getElementById(
+    'creation-year-output'
+);
+
+const creationYearProgress = document.getElementById(
+    'creation-year-progress'
+);
+
+const firstAlbumMinimumInput = document.getElementById(
+    'first-album-min'
+);
+
+const firstAlbumMaximumInput = document.getElementById(
+    'first-album-max'
+);
+
+const firstAlbumOutput = document.getElementById(
+    'first-album-output'
+);
+
+const firstAlbumProgress = document.getElementById(
+    'first-album-progress'
+);
+
+const memberCountFilters = document.getElementById(
+    'member-count-filters'
+);
+
+const locationFilters = document.getElementById(
+    'location-filters'
+);
+
+const memberCountDropdown = document.getElementById(
+    'member-count-dropdown'
+);
+
+const locationDropdown = document.getElementById(
+    'location-dropdown'
+);
+
+const memberCountSummary = document.getElementById(
+    'member-count-summary'
+);
+
+const locationSummary = document.getElementById(
+    'location-summary'
+);
+
+const artistSortSelect = document.getElementById(
+    'artist-sort'
+);
+
+const resetFiltersButton = document.querySelector(
+    '.filters__reset'
+);
+
+const emptyResetButton = document.querySelector(
+    '.artists__empty-reset'
+);
+
+const artistsEmptyState = document.querySelector(
+    '.artists__empty'
+);
 
 const artistsCountNumber = document.querySelector(
     '.artists__count-number'
 );
 
-const pagination = document.querySelector('.pagination');
-const paginationList = document.querySelector('.pagination__list');
+const pagination = document.querySelector(
+    '.pagination'
+);
+
+const paginationList = document.querySelector(
+    '.pagination__list'
+);
 
 const previousPageButton = document.querySelector(
     '.pagination__button--previous'
@@ -50,6 +119,16 @@ let artists = [];
 let filteredCards = [...artistCards];
 let currentPage = 1;
 let activeSuggestionIndex = -1;
+
+let creationYearBounds = {
+    minimum: 0,
+    maximum: 0,
+};
+
+let firstAlbumBounds = {
+    minimum: 0,
+    maximum: 0,
+};
 
 /* ==========================================================
    ARTIST DATA
@@ -75,7 +154,10 @@ function readArtistsData() {
 
         return parsedData;
     } catch (error) {
-        console.error('Unable to read artist data:', error);
+        console.error(
+            'Unable to read artist data:',
+            error
+        );
 
         return [];
     }
@@ -116,9 +198,14 @@ function getArtistImage(artist) {
 }
 
 function getArtistMembers(artist) {
-    const members = artist.members ?? artist.Members;
+    const members =
+        artist.members ??
+        artist.Members ??
+        [];
 
-    return Array.isArray(members) ? members : [];
+    return Array.isArray(members)
+        ? members
+        : [];
 }
 
 function getArtistLocations(artist) {
@@ -127,21 +214,27 @@ function getArtistLocations(artist) {
         artist.Locations ??
         [];
 
-    return Array.isArray(locations) ? locations : [];
+    return Array.isArray(locations)
+        ? locations
+        : [];
 }
 
 function getArtistCreationDate(artist) {
-    return artist.creationDate ??
+    return (
+        artist.creationDate ??
         artist.creation_date ??
         artist.CreationDate ??
-        '';
+        ''
+    );
 }
 
 function getArtistFirstAlbum(artist) {
-    return artist.firstAlbum ??
+    return (
+        artist.firstAlbum ??
         artist.first_album ??
         artist.FirstAlbum ??
-        '';
+        ''
+    );
 }
 
 function escapeHTML(value) {
@@ -153,41 +246,94 @@ function escapeHTML(value) {
         .replaceAll("'", '&#039;');
 }
 
+function getUniqueSortedNumbers(values) {
+    return [...new Set(values)]
+        .filter((value) => {
+            return Number.isFinite(value);
+        })
+        .sort((firstValue, secondValue) => {
+            return firstValue - secondValue;
+        });
+}
+
+function getUniqueSortedText(values) {
+    return [...new Set(values)]
+        .filter((value) => {
+            return String(value).trim() !== '';
+        })
+        .sort((firstValue, secondValue) => {
+            return String(firstValue).localeCompare(
+                String(secondValue)
+            );
+        });
+}
+
+function getArtistByCard(card) {
+    const cardArtistID = Number(
+        card.dataset.artistId
+    );
+
+    return artists.find((artist) => {
+        return (
+            Number(getArtistID(artist)) ===
+            cardArtistID
+        );
+    });
+}
+
 /* ==========================================================
    SEARCH CONTROLS
 ========================================================== */
 
 function updateSearchControls() {
-    if (!searchInput || !searchButton || !clearButton) {
+    if (
+        !searchInput ||
+        !searchButton ||
+        !clearButton
+    ) {
         return;
     }
 
-    const hasValue = searchInput.value.trim() !== '';
+    const hasValue =
+        searchInput.value.trim() !== '';
 
     searchButton.disabled = !hasValue;
     clearButton.hidden = !hasValue;
 }
 
 function closeSuggestions() {
-    if (!searchSuggestions || !searchInput) {
+    if (
+        !searchSuggestions ||
+        !searchInput
+    ) {
         return;
     }
 
     searchSuggestions.hidden = true;
     searchSuggestions.innerHTML = '';
 
-    searchInput.setAttribute('aria-expanded', 'false');
+    searchInput.setAttribute(
+        'aria-expanded',
+        'false'
+    );
 
     activeSuggestionIndex = -1;
 }
 
 function openSuggestions() {
-    if (!searchSuggestions || !searchInput) {
+    if (
+        !searchSuggestions ||
+        !searchInput
+    ) {
         return;
     }
 
     searchSuggestions.hidden = false;
-    searchInput.setAttribute('aria-expanded', 'true');
+
+    searchInput.setAttribute(
+        'aria-expanded',
+        'true'
+    );
 }
 
 /* ==========================================================
@@ -220,12 +366,19 @@ function getArtistSuggestions(artist, query) {
         getArtistCreationDate(artist)
     );
 
-    const firstAlbum = getArtistFirstAlbum(artist);
-    const members = getArtistMembers(artist);
-    const locations = getArtistLocations(artist);
+    const firstAlbum =
+        getArtistFirstAlbum(artist);
+
+    const members =
+        getArtistMembers(artist);
+
+    const locations =
+        getArtistLocations(artist);
 
     if (
-        normalizeText(artistName).includes(normalizedQuery)
+        normalizeText(artistName).includes(
+            normalizedQuery
+        )
     ) {
         suggestions.push(
             createSearchSuggestion(
@@ -239,7 +392,9 @@ function getArtistSuggestions(artist, query) {
 
     members.forEach((member) => {
         if (
-            normalizeText(member).includes(normalizedQuery)
+            normalizeText(member).includes(
+                normalizedQuery
+            )
         ) {
             suggestions.push(
                 createSearchSuggestion(
@@ -254,7 +409,9 @@ function getArtistSuggestions(artist, query) {
 
     locations.forEach((location) => {
         if (
-            normalizeText(location).includes(normalizedQuery)
+            normalizeText(location).includes(
+                normalizedQuery
+            )
         ) {
             suggestions.push(
                 createSearchSuggestion(
@@ -268,7 +425,9 @@ function getArtistSuggestions(artist, query) {
     });
 
     if (
-        normalizeText(creationDate).includes(normalizedQuery)
+        normalizeText(creationDate).includes(
+            normalizedQuery
+        )
     ) {
         suggestions.push(
             createSearchSuggestion(
@@ -281,7 +440,9 @@ function getArtistSuggestions(artist, query) {
     }
 
     if (
-        normalizeText(firstAlbum).includes(normalizedQuery)
+        normalizeText(firstAlbum).includes(
+            normalizedQuery
+        )
     ) {
         suggestions.push(
             createSearchSuggestion(
@@ -297,34 +458,52 @@ function getArtistSuggestions(artist, query) {
 }
 
 function getMatchingSuggestions(query) {
-    const matchingSuggestions = artists.flatMap(
-        (artist) => {
-            return getArtistSuggestions(artist, query);
-        }
-    );
+    const matchingSuggestions =
+        artists.flatMap((artist) => {
+            return getArtistSuggestions(
+                artist,
+                query
+            );
+        });
 
     const uniqueSuggestions = [];
     const seenSuggestions = new Set();
 
-    matchingSuggestions.forEach((suggestion) => {
-        const suggestionKey = [
-            suggestion.artistID,
-            suggestion.type,
-            normalizeText(suggestion.value),
-        ].join('|');
+    matchingSuggestions.forEach(
+        (suggestion) => {
+            const suggestionKey = [
+                suggestion.artistID,
+                suggestion.type,
+                normalizeText(
+                    suggestion.value
+                ),
+            ].join('|');
 
-        if (seenSuggestions.has(suggestionKey)) {
-            return;
+            if (
+                seenSuggestions.has(
+                    suggestionKey
+                )
+            ) {
+                return;
+            }
+
+            seenSuggestions.add(
+                suggestionKey
+            );
+
+            uniqueSuggestions.push(
+                suggestion
+            );
         }
-
-        seenSuggestions.add(suggestionKey);
-        uniqueSuggestions.push(suggestion);
-    });
+    );
 
     return uniqueSuggestions.slice(0, 8);
 }
 
-function createSuggestionMarkup(suggestion, index) {
+function createSuggestionMarkup(
+    suggestion,
+    index
+) {
     return `
         <li role="presentation">
             <button
@@ -348,13 +527,19 @@ function createSuggestionMarkup(suggestion, index) {
 
                 <span class="search__suggestion-content">
                     <span class="search__suggestion-name">
-                        ${escapeHTML(suggestion.value)}
+                        ${escapeHTML(
+                            suggestion.value
+                        )}
                     </span>
 
                     <span class="search__suggestion-type">
-                        ${escapeHTML(suggestion.type)}
+                        ${escapeHTML(
+                            suggestion.type
+                        )}
                         ·
-                        ${escapeHTML(suggestion.description)}
+                        ${escapeHTML(
+                            suggestion.description
+                        )}
                     </span>
                 </span>
 
@@ -383,9 +568,13 @@ function renderSuggestions(query) {
     }
 
     const matchingSuggestions =
-        getMatchingSuggestions(normalizedQuery);
+        getMatchingSuggestions(
+            normalizedQuery
+        );
 
-    if (matchingSuggestions.length === 0) {
+    if (
+        matchingSuggestions.length === 0
+    ) {
         searchSuggestions.innerHTML = `
             <li class="search__suggestions-empty">
                 No matching results found
@@ -397,9 +586,10 @@ function renderSuggestions(query) {
         return;
     }
 
-    searchSuggestions.innerHTML = matchingSuggestions
-        .map(createSuggestionMarkup)
-        .join('');
+    searchSuggestions.innerHTML =
+        matchingSuggestions
+            .map(createSuggestionMarkup)
+            .join('');
 
     activeSuggestionIndex = -1;
 
@@ -422,7 +612,8 @@ function updateActiveSuggestion() {
     const buttons = getSuggestionButtons();
 
     buttons.forEach((button, index) => {
-        const isSelected = index === activeSuggestionIndex;
+        const isSelected =
+            index === activeSuggestionIndex;
 
         button.setAttribute(
             'aria-selected',
@@ -447,10 +638,14 @@ function moveSuggestionSelection(direction) {
     activeSuggestionIndex += direction;
 
     if (activeSuggestionIndex < 0) {
-        activeSuggestionIndex = buttons.length - 1;
+        activeSuggestionIndex =
+            buttons.length - 1;
     }
 
-    if (activeSuggestionIndex >= buttons.length) {
+    if (
+        activeSuggestionIndex >=
+        buttons.length
+    ) {
         activeSuggestionIndex = 0;
     }
 
@@ -463,7 +658,9 @@ function openArtistPage(artistID) {
     }
 
     window.location.href =
-        `/artist?id=${encodeURIComponent(artistID)}`;
+        `/artist?id=${encodeURIComponent(
+            artistID
+        )}`;
 }
 
 function selectActiveSuggestion() {
@@ -471,15 +668,18 @@ function selectActiveSuggestion() {
 
     if (
         activeSuggestionIndex < 0 ||
-        activeSuggestionIndex >= buttons.length
+        activeSuggestionIndex >=
+        buttons.length
     ) {
         return false;
     }
 
-    const selectedButton = buttons[activeSuggestionIndex];
-    const artistID = selectedButton.dataset.artistId;
+    const selectedButton =
+        buttons[activeSuggestionIndex];
 
-    openArtistPage(artistID);
+    openArtistPage(
+        selectedButton.dataset.artistId
+    );
 
     return true;
 }
@@ -489,195 +689,762 @@ function selectActiveSuggestion() {
 ========================================================== */
 
 if (searchInput) {
-    searchInput.addEventListener('input', () => {
-        updateSearchControls();
-        renderSuggestions(searchInput.value);
-    });
+    searchInput.addEventListener(
+        'input',
+        () => {
+            updateSearchControls();
 
-    searchInput.addEventListener('focus', () => {
-        if (searchInput.value.trim() !== '') {
-            renderSuggestions(searchInput.value);
+            renderSuggestions(
+                searchInput.value
+            );
         }
-    });
+    );
 
-    searchInput.addEventListener('keydown', (event) => {
-        if (
-            event.key === 'ArrowDown' &&
-            !searchSuggestions?.hidden
-        ) {
-            event.preventDefault();
-
-            moveSuggestionSelection(1);
-
-            return;
-        }
-
-        if (
-            event.key === 'ArrowUp' &&
-            !searchSuggestions?.hidden
-        ) {
-            event.preventDefault();
-
-            moveSuggestionSelection(-1);
-
-            return;
-        }
-
-        if (event.key === 'Escape') {
-            closeSuggestions();
-
-            return;
-        }
-
-        if (event.key === 'Enter') {
-            const suggestionWasSelected =
-                selectActiveSuggestion();
-
-            if (suggestionWasSelected) {
-                event.preventDefault();
+    searchInput.addEventListener(
+        'focus',
+        () => {
+            if (
+                searchInput.value.trim() !==
+                ''
+            ) {
+                renderSuggestions(
+                    searchInput.value
+                );
             }
         }
-    });
-}
+    );
 
-if (searchSuggestions) {
-    searchSuggestions.addEventListener(
-        'click',
+    searchInput.addEventListener(
+        'keydown',
         (event) => {
-            const suggestionButton = event.target.closest(
-                '.search__suggestion'
-            );
+            if (
+                event.key === 'ArrowDown' &&
+                !searchSuggestions?.hidden
+            ) {
+                event.preventDefault();
+                moveSuggestionSelection(1);
 
-            if (!suggestionButton) {
                 return;
             }
 
-            openArtistPage(
-                suggestionButton.dataset.artistId
+            if (
+                event.key === 'ArrowUp' &&
+                !searchSuggestions?.hidden
+            ) {
+                event.preventDefault();
+                moveSuggestionSelection(-1);
+
+                return;
+            }
+
+            if (event.key === 'Escape') {
+                closeSuggestions();
+
+                return;
+            }
+
+            if (event.key === 'Enter') {
+                const selected =
+                    selectActiveSuggestion();
+
+                if (selected) {
+                    event.preventDefault();
+                }
+            }
+        }
+    );
+}
+
+searchSuggestions?.addEventListener(
+    'click',
+    (event) => {
+        const suggestionButton =
+            event.target.closest(
+                '.search__suggestion'
+            );
+
+        if (!suggestionButton) {
+            return;
+        }
+
+        openArtistPage(
+            suggestionButton.dataset.artistId
+        );
+    }
+);
+
+if (
+    clearButton &&
+    searchInput
+) {
+    clearButton.addEventListener(
+        'click',
+        () => {
+            searchInput.value = '';
+
+            updateSearchControls();
+            closeSuggestions();
+
+            searchInput.focus();
+        }
+    );
+}
+
+if (
+    searchForm &&
+    searchInput
+) {
+    searchForm.addEventListener(
+        'submit',
+        (event) => {
+            if (
+                searchInput.value.trim() ===
+                ''
+            ) {
+                event.preventDefault();
+                searchInput.focus();
+            }
+        }
+    );
+}
+
+/* ==========================================================
+   CHECKBOX OPTION CREATION
+========================================================== */
+
+function createSafeID(
+    prefix,
+    value,
+    index
+) {
+    const normalizedValue =
+        normalizeText(value)
+            .normalize('NFD')
+            .replace(
+                /[\u0300-\u036f]/g,
+                ''
+            )
+            .replace(
+                /[^a-z0-9]+/g,
+                '-'
+            )
+            .replace(
+                /^-+|-+$/g,
+                ''
+            );
+
+    return [
+        prefix,
+        normalizedValue || 'option',
+        index,
+    ].join('-');
+}
+
+function createCheckboxElement({
+    id,
+    name,
+    value,
+    label,
+}) {
+    const checkboxLabel =
+        document.createElement('label');
+
+    checkboxLabel.className =
+        'filters__checkbox';
+
+    checkboxLabel.htmlFor = id;
+
+    const checkboxInput =
+        document.createElement('input');
+
+    checkboxInput.id = id;
+    checkboxInput.className =
+        'filters__checkbox-input';
+
+    checkboxInput.type = 'checkbox';
+    checkboxInput.name = name;
+    checkboxInput.value = String(value);
+
+    const checkboxControl =
+        document.createElement('span');
+
+    checkboxControl.className =
+        'filters__checkbox-control';
+
+    const checkboxIcon =
+        document.createElement('span');
+
+    checkboxIcon.className =
+        'filters__checkbox-icon';
+
+    checkboxIcon.setAttribute(
+        'aria-hidden',
+        'true'
+    );
+
+    checkboxIcon.textContent = '✓';
+
+    const checkboxText =
+        document.createElement('span');
+
+    checkboxText.className =
+        'filters__checkbox-label';
+
+    checkboxText.textContent = label;
+
+    checkboxControl.append(
+        checkboxIcon
+    );
+
+    checkboxLabel.append(
+        checkboxInput,
+        checkboxControl,
+        checkboxText
+    );
+
+    return checkboxLabel;
+}
+
+function populateMemberCountFilters() {
+    if (!memberCountFilters) {
+        return;
+    }
+
+    const memberCounts =
+        getUniqueSortedNumbers(
+            artistCards.map((card) => {
+                return Number(
+                    card.dataset.memberCount
+                );
+            })
+        );
+
+    memberCountFilters.innerHTML = '';
+
+    memberCounts.forEach(
+        (memberCount, index) => {
+            const label =
+                memberCount === 1
+                    ? '1 member'
+                    : `${memberCount} members`;
+
+            const checkbox =
+                createCheckboxElement({
+                    id: createSafeID(
+                        'member-count',
+                        memberCount,
+                        index
+                    ),
+                    name: 'member-count',
+                    value: memberCount,
+                    label,
+                });
+
+            memberCountFilters.append(
+                checkbox
             );
         }
     );
 }
 
-if (clearButton && searchInput) {
-    clearButton.addEventListener('click', () => {
-        searchInput.value = '';
+function populateLocationFilters() {
+    if (!locationFilters) {
+        return;
+    }
 
-        updateSearchControls();
-        closeSuggestions();
+    const locations =
+        getUniqueSortedText(
+            artists.flatMap((artist) => {
+                return getArtistLocations(
+                    artist
+                );
+            })
+        );
 
-        searchInput.focus();
-    });
-}
+    locationFilters.innerHTML = '';
 
-if (searchForm && searchInput) {
-    searchForm.addEventListener('submit', (event) => {
-        if (searchInput.value.trim() === '') {
-            event.preventDefault();
+    locations.forEach(
+        (location, index) => {
+            const checkbox =
+                createCheckboxElement({
+                    id: createSafeID(
+                        'location',
+                        location,
+                        index
+                    ),
+                    name: 'location',
+                    value: location,
+                    label: location,
+                });
 
-            searchInput.focus();
+            locationFilters.append(
+                checkbox
+            );
         }
-    });
+    );
 }
 
-document.addEventListener('click', (event) => {
+/* ==========================================================
+   RANGE FILTERS
+========================================================== */
+
+function getCardYears(datasetProperty) {
+    return getUniqueSortedNumbers(
+        artistCards.map((card) => {
+            return parseYear(
+                card.dataset[datasetProperty]
+            );
+        })
+    );
+}
+
+function configureRangeFilter({
+    minimumInput,
+    maximumInput,
+    years,
+}) {
     if (
-        !searchForm ||
-        searchForm.contains(event.target)
+        !minimumInput ||
+        !maximumInput ||
+        years.length === 0
+    ) {
+        return {
+            minimum: 0,
+            maximum: 0,
+        };
+    }
+
+    const minimum = years[0];
+    const maximum =
+        years[years.length - 1];
+
+    minimumInput.min = String(minimum);
+    minimumInput.max = String(maximum);
+    minimumInput.value = String(minimum);
+
+    maximumInput.min = String(minimum);
+    maximumInput.max = String(maximum);
+    maximumInput.value = String(maximum);
+
+    return {
+        minimum,
+        maximum,
+    };
+}
+
+function updateRangePresentation({
+    minimumInput,
+    maximumInput,
+    output,
+    progress,
+}) {
+    if (
+        !minimumInput ||
+        !maximumInput
     ) {
         return;
     }
 
-    closeSuggestions();
-});
+    const rangeMinimum =
+        Number(minimumInput.min);
 
-/* ==========================================================
-   FILTER OPTIONS
-========================================================== */
+    const rangeMaximum =
+        Number(minimumInput.max);
 
-function getUniqueSortedValues(values) {
-    return [...new Set(values)]
-        .filter((value) => {
-            return value !== null && value !== '';
-        })
-        .sort((firstValue, secondValue) => {
-            return firstValue - secondValue;
-        });
-}
+    const selectedMinimum =
+        Number(minimumInput.value);
 
-function addOptionsToSelect(selectElement, values) {
-    if (!selectElement) {
+    const selectedMaximum =
+        Number(maximumInput.value);
+
+    if (output) {
+        output.textContent =
+            `${selectedMinimum} – ${selectedMaximum}`;
+    }
+
+    if (
+        !progress ||
+        rangeMaximum === rangeMinimum
+    ) {
         return;
     }
 
-    values.forEach((value) => {
-        const option = document.createElement('option');
+    const minimumPercentage =
+        (
+            (selectedMinimum - rangeMinimum) /
+            (rangeMaximum - rangeMinimum)
+        ) * 100;
 
-        option.value = String(value);
-        option.textContent = String(value);
+    const maximumPercentage =
+        (
+            (selectedMaximum - rangeMinimum) /
+            (rangeMaximum - rangeMinimum)
+        ) * 100;
 
-        selectElement.append(option);
+    progress.style.left =
+        `${minimumPercentage}%`;
+
+    progress.style.right =
+        `${100 - maximumPercentage}%`;
+}
+
+function normalizeRangeInputs(
+    changedInput,
+    minimumInput,
+    maximumInput
+) {
+    if (
+        !minimumInput ||
+        !maximumInput
+    ) {
+        return;
+    }
+
+    const minimumValue =
+        Number(minimumInput.value);
+
+    const maximumValue =
+        Number(maximumInput.value);
+
+    if (minimumValue <= maximumValue) {
+        return;
+    }
+
+    if (changedInput === minimumInput) {
+        minimumInput.value =
+            maximumInput.value;
+
+        return;
+    }
+
+    maximumInput.value =
+        minimumInput.value;
+}
+
+function updateCreationYearRange() {
+    updateRangePresentation({
+        minimumInput:
+            creationYearMinimumInput,
+        maximumInput:
+            creationYearMaximumInput,
+        output:
+            creationYearOutput,
+        progress:
+            creationYearProgress,
     });
 }
 
-function populateFilterOptions() {
-    const creationYears = getUniqueSortedValues(
-        artistCards.map((card) => {
-            return parseYear(
-                card.dataset.creationYear
-            );
-        })
-    );
+function updateFirstAlbumRange() {
+    updateRangePresentation({
+        minimumInput:
+            firstAlbumMinimumInput,
+        maximumInput:
+            firstAlbumMaximumInput,
+        output:
+            firstAlbumOutput,
+        progress:
+            firstAlbumProgress,
+    });
+}
 
-    const firstAlbumYears = getUniqueSortedValues(
-        artistCards.map((card) => {
-            return parseYear(
-                card.dataset.firstAlbum
-            );
-        })
-    );
+function initializeRangeFilters() {
+    const creationYears =
+        getCardYears('creationYear');
 
-    addOptionsToSelect(
-        creationYearSelect,
-        creationYears
-    );
+    const firstAlbumYears =
+        getCardYears('firstAlbum');
 
-    addOptionsToSelect(
-        firstAlbumSelect,
-        firstAlbumYears
+    creationYearBounds =
+        configureRangeFilter({
+            minimumInput:
+                creationYearMinimumInput,
+            maximumInput:
+                creationYearMaximumInput,
+            years: creationYears,
+        });
+
+    firstAlbumBounds =
+        configureRangeFilter({
+            minimumInput:
+                firstAlbumMinimumInput,
+            maximumInput:
+                firstAlbumMaximumInput,
+            years: firstAlbumYears,
+        });
+
+    updateCreationYearRange();
+    updateFirstAlbumRange();
+}
+
+/* ==========================================================
+   SELECTED CHECKBOX VALUES
+========================================================== */
+
+function getSelectedCheckboxValues(
+    container,
+    inputName
+) {
+    if (!container) {
+        return [];
+    }
+
+    const selectedInputs =
+        container.querySelectorAll(
+            `input[name="${inputName}"]:checked`
+        );
+
+    return Array.from(
+        selectedInputs,
+        (checkbox) => {
+            return checkbox.value;
+        }
+    );
+}
+
+function getSelectedMemberCounts() {
+    return getSelectedCheckboxValues(
+        memberCountFilters,
+        'member-count'
+    ).map((value) => {
+        return Number(value);
+    });
+}
+
+function getSelectedLocations() {
+    return getSelectedCheckboxValues(
+        locationFilters,
+        'location'
     );
 }
 
 /* ==========================================================
-   FILTERING
+   DROPDOWN FILTERS
 ========================================================== */
 
-function cardMatchesFilters(card) {
-    const selectedCreationYear =
-        creationYearSelect?.value ?? '';
+function updateMemberCountSummary() {
+    if (!memberCountSummary) {
+        return;
+    }
 
-    const selectedFirstAlbumYear =
-        firstAlbumSelect?.value ?? '';
+    const selectedMemberCounts =
+        getSelectedMemberCounts();
 
-    const cardCreationYear = String(
-        parseYear(card.dataset.creationYear) ?? ''
-    );
+    if (
+        selectedMemberCounts.length === 0
+    ) {
+        memberCountSummary.textContent =
+            'Select member count';
 
-    const cardFirstAlbumYear = String(
-        parseYear(card.dataset.firstAlbum) ?? ''
-    );
+        return;
+    }
 
-    const creationYearMatches =
-        selectedCreationYear === '' ||
-        cardCreationYear === selectedCreationYear;
+    if (
+        selectedMemberCounts.length === 1
+    ) {
+        const count =
+            selectedMemberCounts[0];
 
-    const firstAlbumMatches =
-        selectedFirstAlbumYear === '' ||
-        cardFirstAlbumYear === selectedFirstAlbumYear;
+        memberCountSummary.textContent =
+            count === 1
+                ? '1 member'
+                : `${count} members`;
+
+        return;
+    }
+
+    memberCountSummary.textContent =
+        `${selectedMemberCounts.length} options selected`;
+}
+
+function updateLocationSummary() {
+    if (!locationSummary) {
+        return;
+    }
+
+    const selectedLocations =
+        getSelectedLocations();
+
+    if (
+        selectedLocations.length === 0
+    ) {
+        locationSummary.textContent =
+            'Select concert locations';
+
+        return;
+    }
+
+    if (
+        selectedLocations.length === 1
+    ) {
+        locationSummary.textContent =
+            selectedLocations[0];
+
+        return;
+    }
+
+    locationSummary.textContent =
+        `${selectedLocations.length} locations selected`;
+}
+
+function updateDropdownSummaries() {
+    updateMemberCountSummary();
+    updateLocationSummary();
+}
+
+function closeFilterDropdowns(
+    exceptDropdown = null
+) {
+    [
+        memberCountDropdown,
+        locationDropdown,
+    ].forEach((dropdown) => {
+        if (
+            dropdown &&
+            dropdown !== exceptDropdown
+        ) {
+            dropdown.open = false;
+        }
+    });
+}
+
+/* ==========================================================
+   RANGE MATCHING
+========================================================== */
+
+function yearMatchesRange(
+    year,
+    minimumYear,
+    maximumYear
+) {
+    if (year === null) {
+        return false;
+    }
 
     return (
-        creationYearMatches &&
-        firstAlbumMatches
+        year >= minimumYear &&
+        year <= maximumYear
+    );
+}
+
+/* ==========================================================
+   CARD FILTER HELPERS
+========================================================== */
+
+function cardMatchesCreationYear(card) {
+    if (
+        !creationYearMinimumInput ||
+        !creationYearMaximumInput
+    ) {
+        return true;
+    }
+
+    const cardCreationYear =
+        parseYear(
+            card.dataset.creationYear
+        );
+
+    return yearMatchesRange(
+        cardCreationYear,
+        Number(
+            creationYearMinimumInput.value
+        ),
+        Number(
+            creationYearMaximumInput.value
+        )
+    );
+}
+
+function cardMatchesFirstAlbumYear(card) {
+    if (
+        !firstAlbumMinimumInput ||
+        !firstAlbumMaximumInput
+    ) {
+        return true;
+    }
+
+    const cardFirstAlbumYear =
+        parseYear(
+            card.dataset.firstAlbum
+        );
+
+    return yearMatchesRange(
+        cardFirstAlbumYear,
+        Number(
+            firstAlbumMinimumInput.value
+        ),
+        Number(
+            firstAlbumMaximumInput.value
+        )
+    );
+}
+
+function cardMatchesMemberCount(card) {
+    const selectedMemberCounts =
+        getSelectedMemberCounts();
+
+    if (
+        selectedMemberCounts.length === 0
+    ) {
+        return true;
+    }
+
+    const cardMemberCount =
+        Number(
+            card.dataset.memberCount
+        );
+
+    if (
+        !Number.isFinite(
+            cardMemberCount
+        )
+    ) {
+        return false;
+    }
+
+    return selectedMemberCounts.includes(
+        cardMemberCount
+    );
+}
+
+function cardMatchesLocations(card) {
+    const selectedLocations =
+        getSelectedLocations();
+
+    if (
+        selectedLocations.length === 0
+    ) {
+        return true;
+    }
+
+    const artist =
+        getArtistByCard(card);
+
+    if (!artist) {
+        return false;
+    }
+
+    const normalizedArtistLocations =
+        getArtistLocations(artist).map(
+            normalizeText
+        );
+
+    return selectedLocations.some(
+        (selectedLocation) => {
+            return normalizedArtistLocations.includes(
+                normalizeText(
+                    selectedLocation
+                )
+            );
+        }
+    );
+}
+
+function cardMatchesFilters(card) {
+    return (
+        cardMatchesCreationYear(card) &&
+        cardMatchesFirstAlbumYear(card) &&
+        cardMatchesMemberCount(card) &&
+        cardMatchesLocations(card)
     );
 }
 
@@ -687,24 +1454,30 @@ function cardMatchesFilters(card) {
 
 function sortCards(cards) {
     const sortValue =
-        artistSortSelect?.value ?? 'default';
+        artistSortSelect?.value ??
+        'default';
 
     return [...cards].sort(
-        (firstCard, secondCard) => {
-            const firstName = normalizeText(
-                firstCard.dataset.artistName
-            );
+        (
+            firstCard,
+            secondCard
+        ) => {
+            const firstName =
+                normalizeText(
+                    firstCard.dataset.artistName
+                );
 
-            const secondName = normalizeText(
-                secondCard.dataset.artistName
-            );
+            const secondName =
+                normalizeText(
+                    secondCard.dataset.artistName
+                );
 
-            const firstYear =
+            const firstCreationYear =
                 parseYear(
                     firstCard.dataset.creationYear
                 ) ?? 0;
 
-            const secondYear =
+            const secondCreationYear =
                 parseYear(
                     secondCard.dataset.creationYear
                 ) ?? 0;
@@ -721,10 +1494,16 @@ function sortCards(cards) {
                     );
 
                 case 'year-ascending':
-                    return firstYear - secondYear;
+                    return (
+                        firstCreationYear -
+                        secondCreationYear
+                    );
 
                 case 'year-descending':
-                    return secondYear - firstYear;
+                    return (
+                        secondCreationYear -
+                        firstCreationYear
+                    );
 
                 default:
                     return (
@@ -741,30 +1520,105 @@ function sortCards(cards) {
 }
 
 /* ==========================================================
+   ACTIVE FILTER STATE
+========================================================== */
+
+function hasActiveFilters() {
+    const creationRangeChanged =
+        creationYearMinimumInput &&
+        creationYearMaximumInput &&
+        (
+            Number(
+                creationYearMinimumInput.value
+            ) !== creationYearBounds.minimum ||
+            Number(
+                creationYearMaximumInput.value
+            ) !== creationYearBounds.maximum
+        );
+
+    const firstAlbumRangeChanged =
+        firstAlbumMinimumInput &&
+        firstAlbumMaximumInput &&
+        (
+            Number(
+                firstAlbumMinimumInput.value
+            ) !== firstAlbumBounds.minimum ||
+            Number(
+                firstAlbumMaximumInput.value
+            ) !== firstAlbumBounds.maximum
+        );
+
+    const hasMemberFilter =
+        getSelectedMemberCounts()
+            .length > 0;
+
+    const hasLocationFilter =
+        getSelectedLocations()
+            .length > 0;
+
+    const selectedSort =
+        artistSortSelect?.value ??
+        'default';
+
+    const hasSorting =
+        selectedSort !== 'default';
+
+    return (
+        creationRangeChanged ||
+        firstAlbumRangeChanged ||
+        hasMemberFilter ||
+        hasLocationFilter ||
+        hasSorting
+    );
+}
+
+function updateResetButtonState() {
+    if (!resetFiltersButton) {
+        return;
+    }
+
+    resetFiltersButton.disabled =
+        !hasActiveFilters();
+}
+
+/* ==========================================================
    PAGINATION
 ========================================================== */
 
 function getTotalPages() {
     return Math.ceil(
-        filteredCards.length / artistsPerPage
+        filteredCards.length /
+        artistsPerPage
     );
 }
 
-function createPaginationPageButton(pageNumber) {
-    const listItem = document.createElement('li');
-    const button = document.createElement('button');
+function createPaginationPageButton(
+    pageNumber
+) {
+    const listItem =
+        document.createElement('li');
+
+    const button =
+        document.createElement('button');
 
     button.type = 'button';
-    button.className = 'pagination__page';
-    button.dataset.page = String(pageNumber);
-    button.textContent = String(pageNumber);
+    button.className =
+        'pagination__page';
+
+    button.dataset.page =
+        String(pageNumber);
+
+    button.textContent =
+        String(pageNumber);
 
     button.setAttribute(
         'aria-label',
         `Go to page ${pageNumber}`
     );
 
-    if (pageNumber === currentPage) {
+    if (
+        pageNumber === currentPage
+    ) {
         button.classList.add(
             'pagination__page--active'
         );
@@ -781,9 +1635,12 @@ function createPaginationPageButton(pageNumber) {
 }
 
 function createPaginationEllipsis() {
-    const listItem = document.createElement('li');
+    const listItem =
+        document.createElement('li');
 
-    listItem.className = 'pagination__ellipsis';
+    listItem.className =
+        'pagination__ellipsis';
+
     listItem.textContent = '…';
 
     listItem.setAttribute(
@@ -794,11 +1651,17 @@ function createPaginationEllipsis() {
     return listItem;
 }
 
-function getVisiblePageNumbers(totalPages) {
+function getVisiblePageNumbers(
+    totalPages
+) {
     if (totalPages <= 7) {
         return Array.from(
-            { length: totalPages },
-            (_, index) => index + 1
+            {
+                length: totalPages,
+            },
+            (_, index) => {
+                return index + 1;
+            }
         );
     }
 
@@ -815,7 +1678,9 @@ function getVisiblePageNumbers(totalPages) {
     );
 
     if (startPage > 2) {
-        pages.push('ellipsis-start');
+        pages.push(
+            'ellipsis-start'
+        );
     }
 
     for (
@@ -826,8 +1691,13 @@ function getVisiblePageNumbers(totalPages) {
         pages.push(page);
     }
 
-    if (endPage < totalPages - 1) {
-        pages.push('ellipsis-end');
+    if (
+        endPage <
+        totalPages - 1
+    ) {
+        pages.push(
+            'ellipsis-end'
+        );
     }
 
     pages.push(totalPages);
@@ -845,7 +1715,8 @@ function renderPagination() {
         return;
     }
 
-    const totalPages = getTotalPages();
+    const totalPages =
+        getTotalPages();
 
     paginationList.innerHTML = '';
 
@@ -864,12 +1735,18 @@ function renderPagination() {
         currentPage === totalPages;
 
     const visiblePages =
-        getVisiblePageNumbers(totalPages);
+        getVisiblePageNumbers(
+            totalPages
+        );
 
     visiblePages.forEach((page) => {
-        if (typeof page === 'number') {
+        if (
+            typeof page === 'number'
+        ) {
             paginationList.append(
-                createPaginationPageButton(page)
+                createPaginationPageButton(
+                    page
+                )
             );
 
             return;
@@ -890,24 +1767,32 @@ function updateArtistCount() {
         return;
     }
 
-    artistsCountNumber.textContent = String(
-        filteredCards.length
-    );
+    artistsCountNumber.textContent =
+        String(filteredCards.length);
 }
 
 function updateEmptyState() {
-    if (!artistsEmptyState || !artistsGrid) {
+    if (
+        !artistsEmptyState ||
+        !artistsGrid
+    ) {
         return;
     }
 
     const hasArtists =
         filteredCards.length > 0;
 
-    artistsGrid.hidden = !hasArtists;
-    artistsEmptyState.hidden = hasArtists;
+    artistsGrid.hidden =
+        !hasArtists;
 
-    if (pagination) {
-        pagination.hidden = !hasArtists;
+    artistsEmptyState.hidden =
+        hasArtists;
+
+    if (
+        pagination &&
+        !hasArtists
+    ) {
+        pagination.hidden = true;
     }
 }
 
@@ -920,11 +1805,23 @@ function renderArtistCards() {
         card.hidden = true;
     });
 
+    const totalPages =
+        getTotalPages();
+
+    if (
+        totalPages > 0 &&
+        currentPage > totalPages
+    ) {
+        currentPage = totalPages;
+    }
+
     const startIndex =
-        (currentPage - 1) * artistsPerPage;
+        (currentPage - 1) *
+        artistsPerPage;
 
     const endIndex =
-        startIndex + artistsPerPage;
+        startIndex +
+        artistsPerPage;
 
     const cardsForCurrentPage =
         filteredCards.slice(
@@ -932,10 +1829,12 @@ function renderArtistCards() {
             endIndex
         );
 
-    cardsForCurrentPage.forEach((card) => {
-        card.hidden = false;
-        artistsGrid.append(card);
-    });
+    cardsForCurrentPage.forEach(
+        (card) => {
+            card.hidden = false;
+            artistsGrid.append(card);
+        }
+    );
 
     updateArtistCount();
     updateEmptyState();
@@ -943,50 +1842,206 @@ function renderArtistCards() {
 }
 
 function applyFiltersAndSorting() {
-    const matchingCards = artistCards.filter(
-        cardMatchesFilters
-    );
+    const matchingCards =
+        artistCards.filter(
+            cardMatchesFilters
+        );
 
-    filteredCards = sortCards(matchingCards);
+    filteredCards =
+        sortCards(matchingCards);
 
     currentPage = 1;
 
+    updateDropdownSummaries();
+    updateResetButtonState();
     renderArtistCards();
 }
 
-function resetFilters() {
-    if (creationYearSelect) {
-        creationYearSelect.value = '';
+/* ==========================================================
+   RESET FILTERS
+========================================================== */
+
+function resetCheckboxes(container) {
+    if (!container) {
+        return;
     }
 
-    if (firstAlbumSelect) {
-        firstAlbumSelect.value = '';
+    const checkboxes =
+        container.querySelectorAll(
+            'input[type="checkbox"]'
+        );
+
+    checkboxes.forEach(
+        (checkbox) => {
+            checkbox.checked = false;
+        }
+    );
+}
+
+function resetRangeFilter(
+    minimumInput,
+    maximumInput,
+    bounds
+) {
+    if (
+        !minimumInput ||
+        !maximumInput
+    ) {
+        return;
     }
+
+    minimumInput.value =
+        String(bounds.minimum);
+
+    maximumInput.value =
+        String(bounds.maximum);
+}
+
+function resetFilters() {
+    resetRangeFilter(
+        creationYearMinimumInput,
+        creationYearMaximumInput,
+        creationYearBounds
+    );
+
+    resetRangeFilter(
+        firstAlbumMinimumInput,
+        firstAlbumMaximumInput,
+        firstAlbumBounds
+    );
 
     if (artistSortSelect) {
-        artistSortSelect.value = 'default';
+        artistSortSelect.value =
+            'default';
     }
+
+    resetCheckboxes(
+        memberCountFilters
+    );
+
+    resetCheckboxes(
+        locationFilters
+    );
+
+    closeFilterDropdowns();
+
+    updateCreationYearRange();
+    updateFirstAlbumRange();
 
     applyFiltersAndSorting();
 }
 
 /* ==========================================================
-   FILTER AND SORT EVENTS
+   RANGE EVENTS
 ========================================================== */
 
-creationYearSelect?.addEventListener(
-    'change',
-    applyFiltersAndSorting
+function handleCreationYearRangeInput(event) {
+    normalizeRangeInputs(
+        event.target,
+        creationYearMinimumInput,
+        creationYearMaximumInput
+    );
+
+    updateCreationYearRange();
+    applyFiltersAndSorting();
+}
+
+function handleFirstAlbumRangeInput(event) {
+    normalizeRangeInputs(
+        event.target,
+        firstAlbumMinimumInput,
+        firstAlbumMaximumInput
+    );
+
+    updateFirstAlbumRange();
+    applyFiltersAndSorting();
+}
+
+creationYearMinimumInput?.addEventListener(
+    'input',
+    handleCreationYearRangeInput
 );
 
-firstAlbumSelect?.addEventListener(
-    'change',
-    applyFiltersAndSorting
+creationYearMaximumInput?.addEventListener(
+    'input',
+    handleCreationYearRangeInput
 );
+
+firstAlbumMinimumInput?.addEventListener(
+    'input',
+    handleFirstAlbumRangeInput
+);
+
+firstAlbumMaximumInput?.addEventListener(
+    'input',
+    handleFirstAlbumRangeInput
+);
+
+/* ==========================================================
+   OTHER FILTER EVENTS
+========================================================== */
 
 artistSortSelect?.addEventListener(
     'change',
     applyFiltersAndSorting
+);
+
+memberCountFilters?.addEventListener(
+    'change',
+    (event) => {
+        const checkbox =
+            event.target.closest(
+                'input[type="checkbox"]'
+            );
+
+        if (!checkbox) {
+            return;
+        }
+
+        applyFiltersAndSorting();
+    }
+);
+
+locationFilters?.addEventListener(
+    'change',
+    (event) => {
+        const checkbox =
+            event.target.closest(
+                'input[type="checkbox"]'
+            );
+
+        if (!checkbox) {
+            return;
+        }
+
+        applyFiltersAndSorting();
+    }
+);
+
+memberCountDropdown?.addEventListener(
+    'toggle',
+    () => {
+        if (
+            memberCountDropdown.open
+        ) {
+            closeFilterDropdowns(
+                memberCountDropdown
+            );
+        }
+    }
+);
+
+locationDropdown?.addEventListener(
+    'toggle',
+    () => {
+        if (
+            locationDropdown.open
+        ) {
+            closeFilterDropdowns(
+                locationDropdown
+            );
+        }
+    }
 );
 
 resetFiltersButton?.addEventListener(
@@ -1000,32 +2055,78 @@ emptyResetButton?.addEventListener(
 );
 
 /* ==========================================================
+   DOCUMENT CLICK EVENTS
+========================================================== */
+
+document.addEventListener(
+    'click',
+    (event) => {
+        if (
+            searchForm &&
+            !searchForm.contains(
+                event.target
+            )
+        ) {
+            closeSuggestions();
+        }
+
+        const clickedInsideDropdown =
+            memberCountDropdown?.contains(
+                event.target
+            ) ||
+            locationDropdown?.contains(
+                event.target
+            );
+
+        if (!clickedInsideDropdown) {
+            closeFilterDropdowns();
+        }
+    }
+);
+
+/* ==========================================================
    PAGINATION EVENTS
 ========================================================== */
+
+function scrollToArtistsSection() {
+    document
+        .getElementById('artists')
+        ?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+        });
+}
 
 paginationList?.addEventListener(
     'click',
     (event) => {
-        const pageButton = event.target.closest(
-            '.pagination__page'
-        );
+        const pageButton =
+            event.target.closest(
+                '.pagination__page'
+            );
 
         if (!pageButton) {
             return;
         }
 
-        currentPage = Number(
-            pageButton.dataset.page
-        );
+        const selectedPage =
+            Number(
+                pageButton.dataset.page
+            );
+
+        if (
+            !Number.isInteger(
+                selectedPage
+            ) ||
+            selectedPage < 1
+        ) {
+            return;
+        }
+
+        currentPage = selectedPage;
 
         renderArtistCards();
-
-        document
-            .getElementById('artists')
-            ?.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start',
-            });
+        scrollToArtistsSection();
     }
 );
 
@@ -1039,35 +2140,26 @@ previousPageButton?.addEventListener(
         currentPage -= 1;
 
         renderArtistCards();
-
-        document
-            .getElementById('artists')
-            ?.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start',
-            });
+        scrollToArtistsSection();
     }
 );
 
 nextPageButton?.addEventListener(
     'click',
     () => {
-        const totalPages = getTotalPages();
+        const totalPages =
+            getTotalPages();
 
-        if (currentPage >= totalPages) {
+        if (
+            currentPage >= totalPages
+        ) {
             return;
         }
 
         currentPage += 1;
 
         renderArtistCards();
-
-        document
-            .getElementById('artists')
-            ?.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start',
-            });
+        scrollToArtistsSection();
     }
 );
 
@@ -1077,17 +2169,31 @@ nextPageButton?.addEventListener(
 
 function initializeSearch() {
     updateSearchControls();
+    closeSuggestions();
+}
+
+function initializeFilterOptions() {
+    initializeRangeFilters();
+    populateMemberCountFilters();
+    populateLocationFilters();
+    updateDropdownSummaries();
 }
 
 function initializeArtistCollection() {
-    if (artistCards.length === 0) {
+    if (
+        artistCards.length === 0
+    ) {
+        filteredCards = [];
+
         updateArtistCount();
         updateEmptyState();
+        updateResetButtonState();
+        updateDropdownSummaries();
 
         return;
     }
 
-    populateFilterOptions();
+    initializeFilterOptions();
     applyFiltersAndSorting();
 }
 
