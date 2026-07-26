@@ -1,37 +1,37 @@
 package handlers
 
 import (
-	"fmt"
+	"encoding/json"
+	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"groupie-tracker/internal/api"
+	geo "groupie-tracker/internal/geocoder"
 	"groupie-tracker/internal/models"
 )
 
-// SearchHandler evaluates queries against artist information.
-func SearchHandler(w http.ResponseWriter, r *http.Request) {
+func SearchHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
 	query := strings.TrimSpace(
-		strings.ToLower(
-			r.URL.Query().Get("q"),
-		),
+		r.URL.Query().Get("q"),
 	)
 
 	if query == "" {
 		http.Redirect(
 			w,
 			r,
-			"/",
+			"/#artists",
 			http.StatusSeeOther,
 		)
 		return
 	}
 
-	allArtists, err := api.FetchArtists()
+	artists, err := api.FetchArtistsWithLocations()
 	if err != nil {
-		fmt.Println("Search - Fetch Artists Error:", err)
-
 		renderError(
 			w,
 			http.StatusInternalServerError,
@@ -42,152 +42,65 @@ func SearchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	locationIndex, err := api.FetchLocations()
-	if err != nil {
-		fmt.Println("Search - Fetch Locations Error:", err)
+	needle := strings.ToLower(query)
 
-		renderError(
-			w,
-			http.StatusInternalServerError,
-			"search_failed",
-			"Internal Server Error",
-			"The search could not be completed.",
-		)
-		return
-	}
+	filtered := make([]models.Artist, 0)
 
-	locationMap := make(map[int][]string)
-
-	for _, locationNode := range locationIndex.Index {
-		locationMap[locationNode.ID] =
-			locationNode.Locations
-	}
-
-	var filteredArtists []models.Artist
-
-	for _, artist := range allArtists {
-		if strings.Contains(
-			strings.ToLower(artist.Name),
-			query,
-		) {
-			filteredArtists = append(
-				filteredArtists,
-				artist,
-			)
-			continue
-		}
-
-		if strings.Contains(
+	for _, artist := range artists {
+		values := []string{
+			artist.Name,
 			strconv.Itoa(artist.CreationDate),
-			query,
-		) {
-			filteredArtists = append(
-				filteredArtists,
-				artist,
-			)
-			continue
+			artist.FirstAlbum,
 		}
 
-		if strings.Contains(
-			strings.ToLower(artist.FirstAlbum),
-			query,
-		) {
-			filteredArtists = append(
-				filteredArtists,
-				artist,
+		values = append(
+			values,
+			artist.Members...,
+		)
+
+		for _, location := range artist.Locations {
+			values = append(
+				values,
+				geo.NormalizeLocation(location),
 			)
-			continue
 		}
 
-		memberMatch := false
+		matched := false
 
-		for _, member := range artist.Members {
+		for _, value := range values {
 			if strings.Contains(
-				strings.ToLower(member),
-				query,
+				strings.ToLower(value),
+				needle,
 			) {
-				memberMatch = true
+				matched = true
 				break
 			}
 		}
 
-		if memberMatch {
-			filteredArtists = append(
-				filteredArtists,
-				artist,
-			)
-			continue
-		}
-
-		locationMatch := false
-
-		locations, exists :=
-			locationMap[artist.ID]
-
-		if exists {
-			for _, location := range locations {
-				cleanLocation :=
-					strings.ReplaceAll(
-						location,
-						"-",
-						" ",
-					)
-
-				cleanLocation =
-					strings.ReplaceAll(
-						cleanLocation,
-						"_",
-						" ",
-					)
-
-				if strings.Contains(
-					strings.ToLower(cleanLocation),
-					query,
-				) {
-					locationMatch = true
-					break
-				}
-			}
-		}
-
-		if locationMatch {
-			filteredArtists = append(
-				filteredArtists,
+		if matched {
+			filtered = append(
+				filtered,
 				artist,
 			)
 		}
 	}
 
-	pageData, err :=
-		newIndexPageData(filteredArtists)
-
-	if err != nil {
-		fmt.Println(
-			"Search - Artist JSON Encoding Error:",
-			err,
-		)
-
-		renderError(
-			w,
-			http.StatusInternalServerError,
-			"artist_data_failed",
-			"Internal Server Error",
-			"The search results could not be prepared.",
-		)
-		return
-	}
-
-	err = Tmpl.ExecuteTemplate(
-		w,
-		"index.html",
-		pageData,
+	data, err := newIndexPageData(
+		filtered,
+		query,
 	)
-	if err != nil {
-		fmt.Println(
-			"Search Template Execution Error:",
-			err,
-		)
 
+	if err == nil {
+		allArtistsJSON, marshalErr := json.Marshal(artists)
+
+		if marshalErr != nil {
+			err = marshalErr
+		} else {
+			data.ArtistsJSON = template.JS(allArtistsJSON)
+		}
+	}
+
+	if err != nil {
 		renderError(
 			w,
 			http.StatusInternalServerError,
@@ -196,5 +109,19 @@ func SearchHandler(w http.ResponseWriter, r *http.Request) {
 			"The page could not be prepared.",
 		)
 		return
+	}
+
+	if err := renderTemplate(
+		w,
+		"index.html",
+		data,
+	); err != nil {
+		renderError(
+			w,
+			http.StatusInternalServerError,
+			"template_failed",
+			"Internal Server Error",
+			"The page could not be prepared.",
+		)
 	}
 }

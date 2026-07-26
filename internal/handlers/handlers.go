@@ -1,41 +1,93 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
+	"sort"
 	"strconv"
+	"strings"
 
 	"groupie-tracker/internal/api"
+	geo "groupie-tracker/internal/geocoder"
 	"groupie-tracker/internal/models"
 )
 
-// Tmpl holds the pre-parsed templates globally.
 var Tmpl *template.Template
+var Geocoder = geo.New()
 
-// IndexPageData contains the data required by index.html.
 type IndexPageData struct {
 	Artists     []models.Artist
 	ArtistsJSON template.JS
+	Locations   []string
+	Query       string
 }
 
-// newIndexPageData prepares the artist data for index.html
-// and for the JavaScript autocomplete component.
-func newIndexPageData(artists []models.Artist) (IndexPageData, error) {
-	artistsJSON, err := json.Marshal(artists)
+type ArtistPageData struct {
+	Artist    models.Artist
+	Relations models.Relation
+}
+
+func newIndexPageData(
+	artists []models.Artist,
+	query string,
+) (IndexPageData, error) {
+	data, err := json.Marshal(artists)
 	if err != nil {
 		return IndexPageData{}, err
 	}
 
+	set := make(map[string]struct{})
+
+	for _, artist := range artists {
+		for _, location := range artist.Locations {
+			set[location] = struct{}{}
+		}
+	}
+
+	locations := make([]string, 0, len(set))
+
+	for location := range set {
+		locations = append(locations, location)
+	}
+
+	sort.Strings(locations)
+
 	return IndexPageData{
 		Artists:     artists,
-		ArtistsJSON: template.JS(artistsJSON),
+		ArtistsJSON: template.JS(data),
+		Locations:   locations,
+		Query:       query,
 	}, nil
 }
 
-// ArtistsHandler handles the main page route.
-func ArtistsHandler(w http.ResponseWriter, r *http.Request) {
+func renderTemplate(
+	w http.ResponseWriter,
+	name string,
+	data any,
+) error {
+	var page bytes.Buffer
+
+	if err := Tmpl.ExecuteTemplate(&page, name, data); err != nil {
+		return err
+	}
+
+	w.Header().Set(
+		"Content-Type",
+		"text/html; charset=utf-8",
+	)
+
+	_, err := page.WriteTo(w)
+
+	return err
+}
+
+func ArtistsHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
 	if r.URL.Path != "/" {
 		renderError(
 			w,
@@ -47,10 +99,8 @@ func ArtistsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	artists, err := api.FetchArtists()
+	artists, err := api.FetchArtistsWithLocations()
 	if err != nil {
-		fmt.Println("Fetch Artists Error:", err)
-
 		renderError(
 			w,
 			http.StatusInternalServerError,
@@ -61,35 +111,8 @@ func ArtistsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pageData, err := newIndexPageData(artists)
+	data, err := newIndexPageData(artists, "")
 	if err != nil {
-		fmt.Println("Artist JSON Encoding Error:", err)
-
-		renderError(
-			w,
-			http.StatusInternalServerError,
-			"artist_data_failed",
-			"Internal Server Error",
-			"The artist data could not be prepared.",
-		)
-		return
-	}
-
-	err = Tmpl.ExecuteTemplate(
-		w,
-		"index.html",
-		pageData,
-	)
-	if err != nil {
-		fmt.Println("Template Execution Error:", err)
-
-		/*
-			The response may already have started here.
-
-			For now, renderError is still our fallback.
-			Later, during testing, we can improve successful-page
-			rendering with a buffer as well.
-		*/
 		renderError(
 			w,
 			http.StatusInternalServerError,
@@ -99,36 +122,24 @@ func ArtistsHandler(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
+
+	if err := renderTemplate(w, "index.html", data); err != nil {
+		renderError(
+			w,
+			http.StatusInternalServerError,
+			"template_failed",
+			"Internal Server Error",
+			"The page could not be prepared.",
+		)
+	}
 }
 
-// ArtistDetailHandler processes requests for a specific artist.
-func ArtistDetailHandler(w http.ResponseWriter, r *http.Request) {
-	idStr := r.URL.Query().Get("id")
-
-	if idStr == "" {
-		renderError(
-			w,
-			http.StatusBadRequest,
-			"missing_artist_id",
-			"Bad Request",
-			"No artist was selected.",
-		)
-		return
-	}
-
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		renderError(
-			w,
-			http.StatusBadRequest,
-			"invalid_artist_id",
-			"Bad Request",
-			"The artist identifier is invalid.",
-		)
-		return
-	}
-
-	if id <= 0 {
+func ArtistDetailHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	if err != nil || id <= 0 {
 		renderError(
 			w,
 			http.StatusBadRequest,
@@ -141,8 +152,6 @@ func ArtistDetailHandler(w http.ResponseWriter, r *http.Request) {
 
 	artist, err := api.FetchArtistByID(id)
 	if err != nil {
-		fmt.Println("Fetch Artist Error:", err)
-
 		renderError(
 			w,
 			http.StatusNotFound,
@@ -155,8 +164,6 @@ func ArtistDetailHandler(w http.ResponseWriter, r *http.Request) {
 
 	relation, err := api.FetchRelation(id)
 	if err != nil {
-		fmt.Println("Fetch Relation Error:", err)
-
 		renderError(
 			w,
 			http.StatusInternalServerError,
@@ -167,21 +174,13 @@ func ArtistDetailHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := struct {
-		Artist    models.Artist
-		Relations models.Relation
-	}{
+	data := ArtistPageData{
 		Artist:    artist,
 		Relations: relation,
 	}
 
-	err = Tmpl.ExecuteTemplate(
-		w,
-		"artist.html",
-		data,
-	)
-	if err != nil {
-		fmt.Println("Template Execution Error:", err)
+	if err := renderTemplate(w, "artist.html", data); err != nil {
+		fmt.Println(err)
 
 		renderError(
 			w,
@@ -190,6 +189,49 @@ func ArtistDetailHandler(w http.ResponseWriter, r *http.Request) {
 			"Internal Server Error",
 			"The page could not be prepared.",
 		)
+	}
+}
+
+func GeocodeHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	if r.Method != http.MethodGet {
+		http.Error(
+			w,
+			"method not allowed",
+			http.StatusMethodNotAllowed,
+		)
 		return
 	}
+
+	location := strings.TrimSpace(
+		r.URL.Query().Get("q"),
+	)
+
+	if location == "" {
+		http.Error(
+			w,
+			"missing location",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	coords, err := Geocoder.Geocode(location)
+	if err != nil {
+		http.Error(
+			w,
+			"location could not be geocoded",
+			http.StatusNotFound,
+		)
+		return
+	}
+
+	w.Header().Set(
+		"Content-Type",
+		"application/json",
+	)
+
+	_ = json.NewEncoder(w).Encode(coords)
 }
