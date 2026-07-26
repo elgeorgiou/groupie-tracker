@@ -40,6 +40,10 @@
 
 <body class="error-body">
 
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
     <header class="error-header">
         <div class="error-header__container">
 
@@ -61,6 +65,7 @@
             </a>
 
             <div class="theme">
+
                 <button
                     type="button"
                     class="theme__toggle"
@@ -70,7 +75,9 @@
                     aria-expanded="false"
                     aria-controls="theme-menu"
                 >
-                    Theme
+                    <span>
+                        Theme
+                    </span>
 
                     <span
                         class="theme__toggle-icon"
@@ -115,10 +122,15 @@
                         </button>
                     </li>
                 </ul>
+
             </div>
 
         </div>
     </header>
+
+    <!-- =====================================================
+         ERROR PAGE
+    ====================================================== -->
 
     <main
         class="error-page"
@@ -126,12 +138,16 @@
         data-error-key="{{.ErrorKey}}"
     >
 
+        <!-- =================================================
+             BACKGROUND SCENES
+        ================================================== -->
+
         <div
             class="error-scene"
             aria-hidden="true"
         >
 
-            <!-- MODERN THEME -->
+            <!-- MODERN -->
 
             <div class="error-scene__modern">
 
@@ -167,24 +183,21 @@
                     <span>♬</span>
                     <span>♩</span>
                     <span>♪</span>
-                    <span>♫</span>
-                    <span>♬</span>
-                    <span>♩</span>
-                    <span>♪</span>
                 </div>
 
                 <div class="modern-scene__microphone">
+
                     <img
                         class="modern-scene__microphone-image"
                         src="/static/images/modern-microphone.svg"
                         alt=""
-                        aria-hidden="true"
                     >
+
                 </div>
 
             </div>
 
-            <!-- INFERNO THEME -->
+            <!-- INFERNO -->
 
             <div class="error-scene__inferno">
 
@@ -239,13 +252,9 @@
                     <span></span>
                     <span></span>
                     <span></span>
-                    <span></span>
-                    <span></span>
                 </div>
 
                 <div class="inferno-scene__embers">
-                    <span></span>
-                    <span></span>
                     <span></span>
                     <span></span>
                     <span></span>
@@ -273,7 +282,8 @@
                 <div class="inferno-scene__heat"></div>
 
             </div>
-                        <!-- NEON THEME -->
+
+            <!-- NEON -->
 
             <div class="error-scene__neon">
 
@@ -315,97 +325,77 @@
                     <span></span>
                 </div>
 
-                <div class="neon-scene__glitch-lines">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                <div class="neon-scene__notes">
+                    <span>♪</span>
+                    <span>♫</span>
+                    <span>♩</span>
+                    <span>♬</span>
                 </div>
 
             </div>
 
         </div>
 
+        <!-- =================================================
+             ERROR CONTENT
+        ================================================== -->
+
         <section
             class="error-content"
             aria-labelledby="error-title"
         >
 
-            <div class="error-content__eyebrow">
+            <p class="error-content__eyebrow">
+                Something went wrong
+            </p>
 
-                <span
-                    class="error-content__eyebrow-line"
-                    aria-hidden="true"
-                ></span>
-
-                <span>
-                    Signal interrupted
-                </span>
-
-                <span
-                    class="error-content__eyebrow-line"
-                    aria-hidden="true"
-                ></span>
-
-            </div>
-
-            <div
-                class="error-code"
-                data-error-code="{{.StatusCode}}"
-                aria-label="Error {{.StatusCode}}"
+            <p
+                class="error-status"
+                aria-label="HTTP status code {{.StatusCode}}"
             >
-                <span aria-hidden="true">
-                    {{.StatusCode}}
-                </span>
-            </div>
+                {{.StatusCode}}
+            </p>
 
             <h1
+                class="error-content__title"
                 id="error-title"
-                class="error-title"
             >
                 {{.Title}}
             </h1>
 
             <p
+                class="error-content__message"
                 id="error-message"
-                class="error-message"
-                aria-live="polite"
             >
                 {{.Message}}
             </p>
 
-            <a
-                href="/"
-                class="error-action"
-            >
-                <span
-                    class="error-action__icon"
-                    aria-hidden="true"
-                >
-                    ←
-                </span>
+            <div class="error-content__actions">
 
-                <span>
-                    Return to the music
-                </span>
-            </a>
+                <a
+                    href="/"
+                    class="error-content__button error-content__button--primary"
+                >
+                    <span aria-hidden="true">
+                        ←
+                    </span>
+
+                    <span>
+                        Return home
+                    </span>
+                </a>
+
+                <button
+                    class="error-content__button error-content__button--secondary"
+                    type="button"
+                    onclick="history.back()"
+                >
+                    Go back
+                </button>
+
+            </div>
 
         </section>
-
-        <div
-            class="error-system"
-            aria-hidden="true"
-        >
-            <span class="error-system__dot"></span>
-
-            <span>
-                GROUPIE TRACKER SYSTEM
-            </span>
-
-            <span>
-                / ERROR {{.StatusCode}}
-            </span>
-        </div>
 
     </main>
 
