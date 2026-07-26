@@ -157,10 +157,6 @@
         </div>
     </header>
 
-    <!-- =====================================================
-         MAIN
-    ====================================================== -->
-
     <main id="main-content">
 
         <!-- =================================================
@@ -174,10 +170,6 @@
             <div class="hero__container">
 
                 <div class="hero__content">
-
-                    <p class="hero__eyebrow">
-                        Music discovery platform
-                    </p>
 
                     <h1
                         class="hero__title"
@@ -208,10 +200,7 @@
                                 Explore artists
                             </span>
 
-                            <span
-                                class="hero__cta-arrow"
-                                aria-hidden="true"
-                            >
+                            <span aria-hidden="true">
                                 →
                             </span>
                         </a>
@@ -369,7 +358,6 @@
                         </g>
 
                         <g class="hero__music-notes">
-
                             <text
                                 x="95"
                                 y="125"
@@ -409,7 +397,6 @@
                             >
                                 ♪
                             </text>
-
                         </g>
 
                         <g
@@ -566,7 +553,7 @@
                                     id="artist-search"
                                     name="q"
                                     type="search"
-                                    placeholder="Search artists or members..."
+                                    placeholder="Search artists, members, dates or locations..."
                                     autocomplete="off"
                                     aria-autocomplete="list"
                                     aria-controls="artist-suggestions"
@@ -610,43 +597,179 @@
 
                     <div class="filters">
 
-                        <div class="filters__group">
-                            <label
-                                class="filters__label"
-                                for="creation-year"
-                            >
-                                Creation year
-                            </label>
+                        <!-- Creation date range -->
 
-                            <select
-                                class="filters__select"
-                                id="creation-year"
-                                name="creation-year"
+                        <div class="filters__group filters__group--range">
+                            <div class="filters__range-heading">
+                                <span class="filters__label">
+                                    Creation date
+                                </span>
+
+                                <output
+                                    class="filters__range-output"
+                                    id="creation-year-output"
+                                    for="creation-year-min creation-year-max"
+                                >
+                                    –
+                                </output>
+                            </div>
+
+                            <div
+                                class="filters__range"
+                                id="creation-year-range"
                             >
-                                <option value="">
-                                    All years
-                                </option>
-                            </select>
+                                <div class="filters__range-track">
+                                    <div
+                                        class="filters__range-progress"
+                                        id="creation-year-progress"
+                                    ></div>
+                                </div>
+
+                                <input
+                                    class="filters__range-input filters__range-input--minimum"
+                                    id="creation-year-min"
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value="0"
+                                    step="1"
+                                    aria-label="Minimum creation year"
+                                >
+
+                                <input
+                                    class="filters__range-input filters__range-input--maximum"
+                                    id="creation-year-max"
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value="100"
+                                    step="1"
+                                    aria-label="Maximum creation year"
+                                >
+                            </div>
                         </div>
 
-                        <div class="filters__group">
-                            <label
-                                class="filters__label"
-                                for="first-album"
-                            >
-                                First album year
-                            </label>
+                        <!-- First album range -->
 
-                            <select
-                                class="filters__select"
-                                id="first-album"
-                                name="first-album"
+                        <div class="filters__group filters__group--range">
+                            <div class="filters__range-heading">
+                                <span class="filters__label">
+                                    First album date
+                                </span>
+
+                                <output
+                                    class="filters__range-output"
+                                    id="first-album-output"
+                                    for="first-album-min first-album-max"
+                                >
+                                    –
+                                </output>
+                            </div>
+
+                            <div
+                                class="filters__range"
+                                id="first-album-range"
                             >
-                                <option value="">
-                                    All years
-                                </option>
-                            </select>
+                                <div class="filters__range-track">
+                                    <div
+                                        class="filters__range-progress"
+                                        id="first-album-progress"
+                                    ></div>
+                                </div>
+
+                                <input
+                                    class="filters__range-input filters__range-input--minimum"
+                                    id="first-album-min"
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value="0"
+                                    step="1"
+                                    aria-label="Minimum first album year"
+                                >
+
+                                <input
+                                    class="filters__range-input filters__range-input--maximum"
+                                    id="first-album-max"
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value="100"
+                                    step="1"
+                                    aria-label="Maximum first album year"
+                                >
+                            </div>
                         </div>
+
+                        <!-- Member checkboxes -->
+
+                        <div class="filters__group">
+                            <span class="filters__label">
+                                Number of members
+                            </span>
+
+                            <details
+                                class="filters__dropdown"
+                                id="member-count-dropdown"
+                            >
+                                <summary class="filters__dropdown-summary">
+                                    <span
+                                        class="filters__dropdown-text"
+                                        id="member-count-summary"
+                                    >
+                                        Select member count
+                                    </span>
+
+                                    <span
+                                        class="filters__dropdown-arrow"
+                                        aria-hidden="true"
+                                    >
+                                        ▼
+                                    </span>
+                                </summary>
+
+                                <div
+                                    class="filters__dropdown-panel"
+                                    id="member-count-filters"
+                                ></div>
+                            </details>
+                        </div>
+
+                        <!-- Location checkboxes -->
+
+                        <div class="filters__group">
+                            <span class="filters__label">
+                                Concert locations
+                            </span>
+
+                            <details
+                                class="filters__dropdown"
+                                id="location-dropdown"
+                            >
+                                <summary class="filters__dropdown-summary">
+                                    <span
+                                        class="filters__dropdown-text"
+                                        id="location-summary"
+                                    >
+                                        Select concert locations
+                                    </span>
+
+                                    <span
+                                        class="filters__dropdown-arrow"
+                                        aria-hidden="true"
+                                    >
+                                        ▼
+                                    </span>
+                                </summary>
+
+                                <div
+                                    class="filters__dropdown-panel filters__dropdown-panel--locations"
+                                    id="location-filters"
+                                ></div>
+                            </details>
+                        </div>
+
+                        <!-- Sorting -->
 
                         <div class="filters__group">
                             <label
@@ -705,6 +828,7 @@
                             data-artist-name="{{.Name}}"
                             data-creation-year="{{.CreationDate}}"
                             data-first-album="{{.FirstAlbum}}"
+                            data-member-count="{{len .Members}}"
                         >
                             <a
                                 class="artist-card__link"
@@ -720,33 +844,13 @@
                                         loading="lazy"
                                     >
 
-                                    <div
-                                        class="artist-card__image-overlay"
-                                        aria-hidden="true"
-                                    ></div>
-
-                                    <span class="artist-card__year">
-                                        {{.CreationDate}}
-                                    </span>
-
                                 </div>
 
                                 <div class="artist-card__content">
 
-                                    <div class="artist-card__heading">
-
-                                        <h3 class="artist-card__name">
-                                            {{.Name}}
-                                        </h3>
-
-                                        <span
-                                            class="artist-card__arrow"
-                                            aria-hidden="true"
-                                        >
-                                            ↗
-                                        </span>
-
-                                    </div>
+                                    <h3 class="artist-card__name">
+                                        {{.Name}}
+                                    </h3>
 
                                     <dl class="artist-card__details">
 
@@ -787,7 +891,10 @@
                                             View artist
                                         </span>
 
-                                        <span aria-hidden="true">
+                                        <span
+                                            class="artist-card__arrow"
+                                            aria-hidden="true"
+                                        >
                                             →
                                         </span>
                                     </div>
@@ -799,14 +906,6 @@
                     {{else}}
 
                         <div class="artists__server-empty">
-
-                            <span
-                                class="artists__empty-icon"
-                                aria-hidden="true"
-                            >
-                                ♫
-                            </span>
-
                             <h3>
                                 No artists found
                             </h3>
@@ -815,14 +914,6 @@
                                 Try searching with another artist,
                                 member, year, album or location.
                             </p>
-
-                            <a
-                                href="/"
-                                class="artists__empty-link"
-                            >
-                                Show all artists
-                            </a>
-
                         </div>
 
                     {{end}}
@@ -832,13 +923,6 @@
                     class="artists__empty"
                     hidden
                 >
-                    <span
-                        class="artists__empty-icon"
-                        aria-hidden="true"
-                    >
-                        ♫
-                    </span>
-
                     <h3>
                         No matching artists
                     </h3>
