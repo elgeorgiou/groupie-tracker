@@ -1,9 +1,12 @@
 'use strict';
 
-document.addEventListener('DOMContentLoaded', () => {
-    initConcertToggles();
-    initArtistMap();
-});
+document.addEventListener(
+    'DOMContentLoaded',
+    () => {
+        initConcertToggles();
+        initArtistMap();
+    }
+);
 
 /*
 ==========================================================
@@ -12,28 +15,36 @@ CONCERT LOCATION ACCORDION
 */
 
 function initConcertToggles() {
-    const concertButtons = document.querySelectorAll(
-        '.concert-location__toggle'
-    );
+    const concertButtons =
+        document.querySelectorAll(
+            '.concert-location__toggle'
+        );
 
     concertButtons.forEach(button => {
-        const datesList = button.nextElementSibling;
+        const datesList =
+            button.nextElementSibling;
 
         if (!datesList) {
             return;
         }
 
-        button.addEventListener('click', () => {
-            const isExpanded =
-                button.getAttribute('aria-expanded') === 'true';
+        button.addEventListener(
+            'click',
+            () => {
+                const isExpanded =
+                    button.getAttribute(
+                        'aria-expanded'
+                    ) === 'true';
 
-            button.setAttribute(
-                'aria-expanded',
-                String(!isExpanded)
-            );
+                button.setAttribute(
+                    'aria-expanded',
+                    String(!isExpanded)
+                );
 
-            datesList.hidden = isExpanded;
-        });
+                datesList.hidden =
+                    isExpanded;
+            }
+        );
     });
 }
 
@@ -44,10 +55,15 @@ ARTIST MAP
 */
 
 async function initArtistMap() {
-    const mapElement = document.getElementById('tour-map');
-    const placeholder = document.getElementById(
-        'tour-map-placeholder'
-    );
+    const mapElement =
+        document.getElementById(
+            'tour-map'
+        );
+
+    const placeholder =
+        document.getElementById(
+            'tour-map-placeholder'
+        );
 
     if (!mapElement) {
         return;
@@ -68,7 +84,8 @@ async function initArtistMap() {
         return;
     }
 
-    const concertLocations = collectConcertLocations();
+    const concertLocations =
+        collectConcertLocations();
 
     if (concertLocations.length === 0) {
         showMapMessage(
@@ -87,10 +104,16 @@ async function initArtistMap() {
     the markers that were successfully created.
     */
 
-    const map = L.map(mapElement, {
-        zoomControl: true,
-        scrollWheelZoom: true
-    }).setView([20, 0], 2);
+    const map = L.map(
+        mapElement,
+        {
+            zoomControl: true,
+            scrollWheelZoom: true
+        }
+    ).setView(
+        [20, 0],
+        2
+    );
 
     /*
     Add the OpenStreetMap tile layer.
@@ -103,6 +126,7 @@ async function initArtistMap() {
         'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         {
             maxZoom: 19,
+
             attribution:
                 '&copy; OpenStreetMap contributors'
         }
@@ -118,23 +142,30 @@ async function initArtistMap() {
     We do not send every request at the same time.
     */
 
-    for (const concertLocation of concertLocations) {
+    for (
+        const concertLocation
+        of concertLocations
+    ) {
         try {
-            const coordinates = await geocodeLocation(
-                concertLocation.searchName
-            );
+            const coordinates =
+                await geocodeLocation(
+                    concertLocation.originalName
+                );
 
             if (!coordinates) {
                 continue;
             }
 
-            const marker = createConcertMarker(
-                map,
-                coordinates,
-                concertLocation
-            );
+            const marker =
+                createConcertMarker(
+                    map,
+                    coordinates,
+                    concertLocation
+                );
 
-            markerCoordinates.push(marker.getLatLng());
+            markerCoordinates.push(
+                marker.getLatLng()
+            );
 
             successfulLocations += 1;
         } catch (error) {
@@ -143,16 +174,6 @@ async function initArtistMap() {
                 error
             );
         }
-
-        /*
-        The public Nominatim service requires requests to remain
-        below one request per second.
-
-        Cached locations do not perform a network request, but
-        this small delay keeps uncached requests sequential.
-        */
-
-        await delay(1100);
     }
 
     if (successfulLocations === 0) {
@@ -161,10 +182,14 @@ async function initArtistMap() {
             'The concert locations could not be placed on the map.'
         );
 
+        map.remove();
+
         return;
     }
 
-    removeMapPlaceholder(placeholder);
+    removeMapPlaceholder(
+        placeholder
+    );
 
     fitMapToMarkers(
         map,
@@ -176,48 +201,66 @@ async function initArtistMap() {
     after the map container becomes visible and filled.
     */
 
-    window.setTimeout(() => {
-        map.invalidateSize();
-    }, 100);
+    window.setTimeout(
+        () => {
+            map.invalidateSize();
+        },
+        100
+    );
 }
 
 /*
 ==========================================================
-COLLECT LOCATION DATA FROM THE HTML
+COLLECT LOCATION DATA FROM HTML
 ==========================================================
 */
 
 function collectConcertLocations() {
-    const locationElements = document.querySelectorAll(
-        '.concert-location[data-location]'
-    );
+    const locationElements =
+        document.querySelectorAll(
+            '.concert-location[data-location]'
+        );
 
     const locations = [];
 
-    locationElements.forEach(locationElement => {
-        const originalName =
-            locationElement.dataset.location?.trim();
+    locationElements.forEach(
+        locationElement => {
+            const originalName =
+                locationElement.dataset.location
+                    ?.trim();
 
-        if (!originalName) {
-            return;
+            if (!originalName) {
+                return;
+            }
+
+            const dateElements =
+                locationElement.querySelectorAll(
+                    '.concert-location__date'
+                );
+
+            const dates =
+                Array.from(dateElements)
+                    .map(dateElement => {
+                        return dateElement
+                            .textContent
+                            .trim();
+                    })
+                    .filter(date => {
+                        return date !== '';
+                    });
+
+            locations.push({
+                originalName,
+
+                displayName:
+                    formatLocationName(
+                        originalName
+                    ),
+
+                dates
+            });
         }
-
-        const dateElements =
-            locationElement.querySelectorAll(
-                '.concert-location__date'
-            );
-
-        const dates = Array.from(dateElements)
-            .map(dateElement => dateElement.textContent.trim())
-            .filter(date => date !== '');
-
-        locations.push({
-            originalName,
-            displayName: formatLocationName(originalName),
-            searchName: normalizeLocationForSearch(originalName),
-            dates
-        });
-    });
+    );
 
     return locations;
 }
@@ -228,8 +271,11 @@ NORMALIZE GROUPIE TRACKER LOCATION NAMES
 ==========================================================
 */
 
-function normalizeLocationForSearch(location) {
-    const separatorIndex = location.lastIndexOf('-');
+function normalizeLocationForSearch(
+    location
+) {
+    const separatorIndex =
+        location.lastIndexOf('-');
 
     /*
     Groupie Tracker locations normally look like:
@@ -241,7 +287,10 @@ function normalizeLocationForSearch(location) {
     */
 
     if (separatorIndex === -1) {
-        return location.replaceAll('_', ' ');
+        return location.replaceAll(
+            '_',
+            ' '
+        );
     }
 
     const city = location
@@ -256,7 +305,9 @@ function normalizeLocationForSearch(location) {
 }
 
 function formatLocationName(location) {
-    return normalizeLocationForSearch(location)
+    return normalizeLocationForSearch(
+        location
+    )
         .split(' ')
         .map(capitalizeWord)
         .join(' ');
@@ -279,42 +330,54 @@ GEOCODING
 ==========================================================
 */
 
-async function geocodeLocation(locationName) {
-    const cachedCoordinates =
-        readCoordinatesFromCache(locationName);
-
-    if (cachedCoordinates) {
-        return cachedCoordinates;
-    }
-
-    const url = new URL(
-        'https://nominatim.openstreetmap.org/search'
+async function geocodeLocation(
+    locationName
+) {
+    const endpoint = new URL(
+        '/api/geocode',
+        window.location.origin
     );
 
-    url.searchParams.set('q', locationName);
-    url.searchParams.set('format', 'jsonv2');
-    url.searchParams.set('limit', '1');
+    /*
+    Send the original Groupie Tracker location value.
 
-    const response = await fetch(url.toString(), {
-        headers: {
-            Accept: 'application/json'
+    The Go backend is responsible for converting values such as:
+
+    new_york-usa
+
+    into:
+
+    new york, usa
+    */
+
+    endpoint.searchParams.set(
+        'q',
+        locationName
+    );
+
+    const response = await fetch(
+        endpoint,
+        {
+            method: 'GET',
+
+            headers: {
+                Accept: 'application/json'
+            }
         }
-    });
+    );
 
     if (!response.ok) {
-        throw new Error(
-            `Geocoding request failed with status ${response.status}`
-        );
-    }
-
-    const results = await response.json();
-
-    if (!Array.isArray(results) || results.length === 0) {
         return null;
     }
 
-    const latitude = Number.parseFloat(results[0].lat);
-    const longitude = Number.parseFloat(results[0].lon);
+    const coordinates =
+        await response.json();
+
+    const latitude =
+        Number(coordinates.latitude);
+
+    const longitude =
+        Number(coordinates.longitude);
 
     if (
         !Number.isFinite(latitude) ||
@@ -323,80 +386,10 @@ async function geocodeLocation(locationName) {
         return null;
     }
 
-    const coordinates = {
+    return {
         latitude,
         longitude
     };
-
-    saveCoordinatesToCache(
-        locationName,
-        coordinates
-    );
-
-    return coordinates;
-}
-
-/*
-==========================================================
-LOCAL STORAGE CACHE
-==========================================================
-*/
-
-function readCoordinatesFromCache(locationName) {
-    const cacheKey = createCacheKey(locationName);
-
-    try {
-        const cachedValue =
-            window.localStorage.getItem(cacheKey);
-
-        if (!cachedValue) {
-            return null;
-        }
-
-        const coordinates = JSON.parse(cachedValue);
-
-        if (
-            !Number.isFinite(coordinates.latitude) ||
-            !Number.isFinite(coordinates.longitude)
-        ) {
-            return null;
-        }
-
-        return coordinates;
-    } catch (error) {
-        console.warn(
-            'Could not read the geocoding cache.',
-            error
-        );
-
-        return null;
-    }
-}
-
-function saveCoordinatesToCache(
-    locationName,
-    coordinates
-) {
-    const cacheKey = createCacheKey(locationName);
-
-    try {
-        window.localStorage.setItem(
-            cacheKey,
-            JSON.stringify(coordinates)
-        );
-    } catch (error) {
-        console.warn(
-            'Could not save the geocoding result.',
-            error
-        );
-    }
-}
-
-function createCacheKey(locationName) {
-    return (
-        'groupie-tracker-geocode:' +
-        locationName.toLowerCase()
-    );
 }
 
 /*
@@ -410,37 +403,46 @@ function createConcertMarker(
     coordinates,
     concertLocation
 ) {
-    const markerIcon = L.divIcon({
-        className: 'artist-map-marker-wrapper',
+    const markerIcon =
+        L.divIcon({
+            className:
+                'artist-map-marker-wrapper',
 
-        html: `
-            <span
-                class="artist-map-marker"
-                aria-hidden="true"
-            ></span>
-        `,
+            html: `
+                <span
+                    class="artist-map-marker"
+                    aria-hidden="true"
+                ></span>
+            `,
 
-        iconSize: [28, 38],
-        iconAnchor: [14, 38],
-        popupAnchor: [0, -34]
-    });
+            iconSize: [28, 38],
+            iconAnchor: [14, 38],
+            popupAnchor: [0, -34]
+        });
 
-    const marker = L.marker(
-        [
-            coordinates.latitude,
-            coordinates.longitude
-        ],
-        {
-            icon: markerIcon,
-            title: concertLocation.displayName
-        }
-    );
+    const marker =
+        L.marker(
+            [
+                coordinates.latitude,
+                coordinates.longitude
+            ],
+            {
+                icon: markerIcon,
+
+                title:
+                    concertLocation.displayName
+            }
+        );
 
     marker.bindPopup(
-        createPopupContent(concertLocation),
+        createPopupContent(
+            concertLocation
+        ),
         {
-            className: 'artist-map-popup',
-            maxWidth: 260
+            className:
+                'artist-map-popup',
+
+            maxWidth: 280
         }
     );
 
@@ -449,58 +451,57 @@ function createConcertMarker(
     return marker;
 }
 
-/*
-==========================================================
-POPUP CONTENT
-==========================================================
-*/
+function createPopupContent(
+    concertLocation
+) {
+    const locationName =
+        escapeHTML(
+            concertLocation.displayName
+        );
 
-function createPopupContent(concertLocation) {
-    const popup = document.createElement('div');
+    let dateContent = `
+        <p class="artist-map-popup__empty">
+            No concert dates available.
+        </p>
+    `;
 
-    popup.className = 'artist-map-popup__content';
+    if (
+        concertLocation.dates.length > 0
+    ) {
+        const dateItems =
+            concertLocation.dates
+                .map(date => {
+                    return `
+                        <li
+                            class="artist-map-popup__date"
+                        >
+                            ${escapeHTML(date)}
+                        </li>
+                    `;
+                })
+                .join('');
 
-    const title = document.createElement('h3');
-
-    title.className = 'artist-map-popup__title';
-    title.textContent = concertLocation.displayName;
-
-    popup.appendChild(title);
-
-    if (concertLocation.dates.length === 0) {
-        const emptyMessage = document.createElement('p');
-
-        emptyMessage.className =
-            'artist-map-popup__empty';
-
-        emptyMessage.textContent =
-            'No concert dates are available.';
-
-        popup.appendChild(emptyMessage);
-
-        return popup;
+        dateContent = `
+            <ul class="artist-map-popup__dates">
+                ${dateItems}
+            </ul>
+        `;
     }
 
-    const datesList = document.createElement('ul');
+    return `
+        <div class="artist-map-popup__content">
+            <strong class="artist-map-popup__title">
+                ${locationName}
+            </strong>
 
-    datesList.className = 'artist-map-popup__dates';
-
-    concertLocation.dates.forEach(date => {
-        const listItem = document.createElement('li');
-
-        listItem.textContent = date;
-
-        datesList.appendChild(listItem);
-    });
-
-    popup.appendChild(datesList);
-
-    return popup;
+            ${dateContent}
+        </div>
+    `;
 }
 
 /*
 ==========================================================
-MAP POSITION
+FIT MAP TO MARKERS
 ==========================================================
 */
 
@@ -508,6 +509,10 @@ function fitMapToMarkers(
     map,
     markerCoordinates
 ) {
+    if (markerCoordinates.length === 0) {
+        return;
+    }
+
     if (markerCoordinates.length === 1) {
         map.setView(
             markerCoordinates[0],
@@ -517,14 +522,18 @@ function fitMapToMarkers(
         return;
     }
 
-    const bounds = L.latLngBounds(
-        markerCoordinates
-    );
+    const markerBounds =
+        L.latLngBounds(
+            markerCoordinates
+        );
 
-    map.fitBounds(bounds, {
-        padding: [50, 50],
-        maxZoom: 7
-    });
+    map.fitBounds(
+        markerBounds,
+        {
+            padding: [45, 45],
+            maxZoom: 7
+        }
+    );
 }
 
 /*
@@ -532,14 +541,6 @@ function fitMapToMarkers(
 MAP PLACEHOLDER
 ==========================================================
 */
-
-function removeMapPlaceholder(placeholder) {
-    if (!placeholder) {
-        return;
-    }
-
-    placeholder.remove();
-}
 
 function showMapMessage(
     placeholder,
@@ -549,34 +550,31 @@ function showMapMessage(
         return;
     }
 
-    const icon =
-        placeholder.querySelector(
-            '.tour-map__placeholder-icon'
-        );
+    placeholder.hidden = false;
+    placeholder.textContent = message;
+}
 
-    const text =
-        placeholder.querySelector('p');
-
-    if (icon) {
-        icon.textContent = '!';
+function removeMapPlaceholder(
+    placeholder
+) {
+    if (!placeholder) {
+        return;
     }
 
-    if (text) {
-        text.textContent = message;
-    }
+    placeholder.hidden = true;
 }
 
 /*
 ==========================================================
-GENERAL HELPERS
+HTML SAFETY
 ==========================================================
 */
 
-function delay(milliseconds) {
-    return new Promise(resolve => {
-        window.setTimeout(
-            resolve,
-            milliseconds
-        );
-    });
+function escapeHTML(value) {
+    return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
 }

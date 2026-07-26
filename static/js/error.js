@@ -1,172 +1,68 @@
 'use strict';
 
-// References to the error page elements whose content changes by theme.
-const errorPage = document.querySelector('.error-page');
-const errorMessage = document.getElementById('error-message');
+const errorPage =
+    document.querySelector('.error-page');
 
-// Themes supported by the website.
-const validErrorThemes = [
-    'modern',
-    'inferno',
-    'neon'
-];
+const errorMessage =
+    document.getElementById('error-message');
 
-// Theme-specific descriptions for every application error.
-const errorMessages = {
-    page_not_found: {
-        modern:
-            "The page you're looking for took a detour and forgot to leave directions.",
+const messages = {
+    page_not_found:
+        'The page you are looking for could not be found.',
 
-        inferno:
-            "The page you're looking for got a little too close to the fire.",
+    artist_not_found:
+        'The requested artist could not be found.',
 
-        neon:
-            "The page you're looking for slipped into another dimension."
-    },
+    invalid_artist_id:
+        'The artist identifier is invalid.',
 
-    artist_not_found: {
-        modern:
-            "This artist seems to have left the stage early.",
+    artists_fetch_failed:
+        'The artist collection could not be loaded.',
 
-        inferno:
-            "This artist vanished in a cloud of smoke and questionable decisions.",
+    relation_fetch_failed:
+        'The concert information could not be loaded.',
 
-        neon:
-            "This artist is broadcasting on a frequency we cannot reach."
-    },
+    search_failed:
+        'The search could not be completed.',
 
-    missing_artist_id: {
-        modern:
-            "You forgot to tell us which artist you wanted to see.",
+    artist_data_failed:
+        'The artist information could not be prepared.',
 
-        inferno:
-            "No artist was chosen, so the stage remains suspiciously empty.",
+    geocode_failed:
+        'The concert location could not be placed on the map.',
 
-        neon:
-            "No artist signal detected. The system is listening, though."
-    },
-
-    invalid_artist_id: {
-        modern:
-            "That artist ID does not appear to be on the guest list.",
-
-        inferno:
-            "That artist ID melted before we could read it.",
-
-        neon:
-            "That artist ID failed the system's vibe check."
-    },
-
-    artists_fetch_failed: {
-        modern:
-            "The artist collection is taking an unscheduled coffee break.",
-
-        inferno:
-            "The artist collection is experiencing excessive combustion.",
-
-        neon:
-            "The artist database stopped responding to our transmissions."
-    },
-
-    artist_data_failed: {
-        modern:
-            "The artist data arrived, but apparently forgot how to behave.",
-
-        inferno:
-            "The artist data was prepared at a temperature nobody approved.",
-
-        neon:
-            "The artist data became corrupted between two realities."
-    },
-
-    relation_fetch_failed: {
-        modern:
-            "The concert details missed their connection.",
-
-        inferno:
-            "The concert trail disappeared somewhere inside the flames.",
-
-        neon:
-            "The concert coordinates were lost somewhere in the signal."
-    },
-
-    search_failed: {
-        modern:
-            "The search got distracted before reaching the results.",
-
-        inferno:
-            "The search results were reduced to ashes.",
-
-        neon:
-            "The search signal encountered unexpected interference."
-    },
-
-    template_failed: {
-        modern:
-            "This page was almost ready, then decided otherwise.",
-
-        inferno:
-            "This page was forged incorrectly and should avoid open flames.",
-
-        neon:
-            "This page failed to render in the current timeline."
-    }
+    template_failed:
+        'The page could not be prepared.'
 };
 
-// Returns the theme currently applied to the root HTML element.
-function getCurrentErrorTheme() {
-    const currentTheme =
-        document.documentElement.dataset.theme;
-
-    if (validErrorThemes.includes(currentTheme)) {
-        return currentTheme;
-    }
-
-    return 'neon';
-}
-
-// Replaces the fallback server message with the description
-// matching both the current error and the current theme.
 function updateErrorMessage() {
     if (!errorPage || !errorMessage) {
         return;
     }
 
-    const errorKey = errorPage.dataset.errorKey;
-    const currentTheme = getCurrentErrorTheme();
-    const messagesForError = errorMessages[errorKey];
+    const errorKey =
+        errorPage.dataset.errorKey;
 
-    if (!messagesForError) {
+    const message =
+        messages[errorKey];
+
+    if (!message) {
         return;
     }
 
-    const selectedMessage =
-        messagesForError[currentTheme];
-
-    if (!selectedMessage) {
-        return;
-    }
-
-    errorMessage.textContent = selectedMessage;
+    errorMessage.textContent = message;
 }
 
-// Watches the root element because theme.js changes its
-// data-theme attribute whenever the user selects another theme.
-const themeObserver = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-        if (
-            mutation.type === 'attributes' &&
-            mutation.attributeName === 'data-theme'
-        ) {
-            updateErrorMessage();
-        }
-    });
-});
+const themeObserver = new MutationObserver(
+    updateErrorMessage
+);
 
-themeObserver.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ['data-theme']
-});
+themeObserver.observe(
+    document.documentElement,
+    {
+        attributes: true,
+        attributeFilter: ['data-theme']
+    }
+);
 
-// Displays the correct description after both deferred scripts load.
 updateErrorMessage();
