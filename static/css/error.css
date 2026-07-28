@@ -199,14 +199,14 @@
 }
 
 .error-system {
-    position: absolute;
-    left: clamp(2rem, 8vw, 9rem);
-    right: auto;
-    bottom: 1.5rem;
-    z-index: 20;
-
     display: flex;
     align-items: center;
+
+    width: max-content;
+    max-width: 100%;
+
+    margin-top: 1.4rem;
+
     gap: 0.55rem;
 
     font-size: 0.62rem;
@@ -694,7 +694,7 @@ These filters turn it into a cool silver/cyan object.
 
 /* Modern text colours. */
 
-html[data-theme="modern"] .error-content__eyebrow {
+html[data-theme="modern"] .error-eyebrow {
     color: #4bdce5;
 }
 
@@ -842,7 +842,7 @@ html[data-theme="inferno"] .inferno-scene__haze {
    INFERNO TYPOGRAPHY
 ========================================================= */
 
-html[data-theme="inferno"] .error-content__eyebrow {
+html[data-theme="inferno"] .error-eyebrow {
     color: #ffb36b;
 
     text-shadow:
@@ -851,7 +851,7 @@ html[data-theme="inferno"] .error-content__eyebrow {
         0 0 1.4rem rgba(255, 52, 0, 0.55);
 }
 
-html[data-theme="inferno"] .error-content__eyebrow-line {
+html[data-theme="inferno"] .error-eyebrow::before {
     background:
         linear-gradient(
             90deg,
@@ -988,27 +988,14 @@ html[data-theme="inferno"] .error-system__dot {
    NEON THEME
 ========================================================= */
 
-html[data-theme="neon"] .error-scene__neon {
-    display: block;
-    isolation: isolate;
+html[data-theme="neon"] .error-system {
+    margin-right: auto;
+    margin-left: auto;
 
-    background:
-        radial-gradient(
-            circle at 50% 34%,
-            rgba(203, 45, 255, 0.20),
-            transparent 17rem
-        ),
-        radial-gradient(
-            ellipse at 50% 85%,
-            rgba(0, 204, 255, 0.12),
-            transparent 34rem
-        ),
-        linear-gradient(
-            180deg,
-            #02020d 0%,
-            #050019 48%,
-            #080020 100%
-        );
+    color: #55eaff;
+
+    text-shadow:
+        0 0 0.35rem rgba(67, 232, 255, 0.80);
 }
 
 html[data-theme="neon"] .error-scene::after {
@@ -1047,7 +1034,7 @@ html[data-theme="neon"] .error-content {
         translate(-50%, -50%);
 }
 
-html[data-theme="neon"] .error-content__eyebrow {
+html[data-theme="neon"] .error-eyebrow {
     color: #ff4af6;
 
     text-transform: uppercase;
@@ -1059,7 +1046,7 @@ html[data-theme="neon"] .error-content__eyebrow {
     letter-spacing: 0.12em;
 }
 
-html[data-theme="neon"] .error-content__eyebrow-line {
+html[data-theme="neon"] .error-eyebrow::before {
     background:
         linear-gradient(
             90deg,
@@ -1927,12 +1914,6 @@ html[data-theme="neon"] .error-system__dot {
         opacity: 0.55;
     }
 
-    /* Bottom system label */
-
-    .error-system {
-    left: 1.5rem;
-    bottom: 1.5rem;
-    }
 }
 
 
@@ -1973,9 +1954,11 @@ html[data-theme="neon"] .error-system__dot {
     }
 
     .error-system {
-    left: 1.15rem;
-    bottom: 1.1rem;
-    max-width: calc(100% - 2.3rem);
+    width: auto;
+    max-width: 100%;
+
+    margin-top: 1.1rem;
+
     font-size: 0.51rem;
     line-height: 1.5;
     }
@@ -2078,12 +2061,12 @@ html[data-theme="neon"] .error-system__dot {
         margin: 0 1rem;
     }
 
-    .error-content__eyebrow {
-        letter-spacing: 0.17em;
+    .error-eyebrow {
+    letter-spacing: 0.17em;
     }
 
-    .error-content__eyebrow-line {
-        width: 1.3rem;
+    .error-eyebrow::before {
+    width: 1.3rem;
     }
 
     .error-action {

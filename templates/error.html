@@ -147,7 +147,7 @@
             aria-hidden="true"
         >
 
-            <!-- MODERN -->
+            <!-- MODERN THEME -->
 
             <div class="error-scene__modern">
 
@@ -197,7 +197,7 @@
 
             </div>
 
-            <!-- INFERNO -->
+            <!-- INFERNO THEME -->
 
             <div class="error-scene__inferno">
 
@@ -283,7 +283,7 @@
 
             </div>
 
-            <!-- NEON -->
+            <!-- NEON THEME -->
 
             <div class="error-scene__neon">
 
@@ -345,54 +345,64 @@
             aria-labelledby="error-title"
         >
 
-            <p class="error-content__eyebrow">
-                Something went wrong
+            <p
+                class="error-eyebrow error-content__eyebrow"
+                id="error-eyebrow"
+            >
+                Signal interrupted
             </p>
 
             <p
-                class="error-status"
+                class="error-code error-status"
                 aria-label="HTTP status code {{.StatusCode}}"
             >
-                {{.StatusCode}}
+                <span>
+                    {{.StatusCode}}
+                </span>
             </p>
 
             <h1
-                class="error-content__title"
+                class="error-title error-content__title"
                 id="error-title"
             >
                 {{.Title}}
             </h1>
 
             <p
-                class="error-content__message"
+                class="error-message error-content__message"
                 id="error-message"
             >
                 {{.Message}}
             </p>
 
-            <div class="error-content__actions">
-
-                <a
-                    href="/"
-                    class="error-content__button error-content__button--primary"
+            <a
+                href="/"
+                class="error-action error-content__button"
+            >
+                <span
+                    class="error-action__arrow"
+                    aria-hidden="true"
                 >
-                    <span aria-hidden="true">
-                        ←
-                    </span>
+                    ←
+                </span>
 
-                    <span>
-                        Return home
-                    </span>
-                </a>
+                <span id="error-action-text">
+                    Return to the music
+                </span>
+            </a>
 
-                <button
-                    class="error-content__button error-content__button--secondary"
-                    type="button"
-                    onclick="history.back()"
-                >
-                    Go back
-                </button>
+            <div
+                class="error-system"
+                aria-label="Error system information"
+            >
+                <span
+                    class="error-system__dot"
+                    aria-hidden="true"
+                ></span>
 
+                <span id="error-system-text">
+                    Groupie Tracker system / error {{.StatusCode}}
+                </span>
             </div>
 
         </section>
