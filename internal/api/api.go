@@ -9,7 +9,7 @@ import (
 	"groupie-tracker/internal/models"
 )
 
-var BaseAPI = "https://groupietrackers.herokuapp.com/api"
+var BaseAPI = "https://groupietrackers.01edu.ai/api"
 
 var client = &http.Client{
 	Timeout: 12 * time.Second,
