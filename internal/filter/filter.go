@@ -231,7 +231,7 @@ func firstAlbumYear(value string) (int, bool) {
 }
 
 func normalizeLocation(value string) string {
-	value = geocoder.NormalizeLocation(value)
+	value = geo.NormalizeLocation(value)
 
 	value = strings.ToLower(value)
 
